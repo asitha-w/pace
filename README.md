@@ -1,7 +1,12 @@
 # pace
 
-pace is a Claude Code mod. It shows how heavy a session is the moment that changes, warns you before
-the prompt cache goes cold, and parks a session so the next session can pick up where it stopped.
+**Know when a Claude Code session is getting expensive, and leave it cleanly.**
+
+pace is a Claude Code mod. It warns you when a session gets heavy or its prompt cache is about to go
+cold. It can also save where you are, so a fresh session picks up from there. It only nudges: it
+never clears, compacts or blocks anything, and nothing it shows enters the model's context.
+
+![pace overview](docs/overview.png)
 
 ## Why
 
