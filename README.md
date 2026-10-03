@@ -1,98 +1,45 @@
 # pace
 
-pace shows how heavy a Claude Code session is while you work, warns you before the prompt cache
-goes cold, and shows how your sessions trend over weeks.
+pace is a Claude Code mod. It shows how heavy a session is the moment that changes, warns you before
+the prompt cache goes cold, and parks a session so the next session can pick up where it stopped.
 
 ## Why
 
 Every turn re-reads the whole context, so a session costs roughly **context × turns**. A long
 session gets expensive without any signal. Coming back after the prompt cache has expired is
 worse: the next turn re-writes the whole context at write price (1.25–2× input) instead of read
-price (0.1×). Claude Code has point-in-time views (`/context`, `/usage`, `/cost`), but it gives no
-live nudge and no history. pace adds both.
+price (0.1×). Claude Code has point-in-time views (`/context`, `/usage`, `/cost`), but it gives you
+no live nudge. pace adds one.
 
 ## Principles
 
-- **No context cost.** pace shows everything to you through the status line, toasts and a band row.
-  It never injects anything into the model's context.
+- **No context cost.** Toasts, the band row and panes are shown only to you. Nothing enters the
+  model's context.
 - **Nudge, never act.** pace never runs `/clear` or compacts for you, and it blocks nothing. It
   says what happened and what it costs. The suggestion text is yours to set, for example "save
   state, then /clear".
 - **Tokens, not time.** pace measures a session by its context size and turn count, not by
   minutes.
-- **Generic.** pace reads only what Claude Code provides. It knows nothing about your tracker, your
+- **Generic.** pace reads only what Claude Code hands it. It knows nothing about your tracker, your
   repos or your workflow.
 - **Deterministic.** pace calls no model, with one optional exception: the topic check (see
   below), which you can turn off.
 
-## Two parts
+## Install
 
-| Part | What it is | Use it for |
-|---|---|---|
-| **CLI** (`pace.py`) | Python 3.11+, standard library only | status line, session history, trends |
-| **Mod** (`mod/`) | a Claude Code mod, Claude Code ≥ 2.1.287 | live alerts in the session, park and resume |
+Requires Claude Code 2.1.287 or later.
 
-The two parts work independently. The mod never calls the CLI.
-
-## CLI
-
-| Command | Run by | Does |
-|---|---|---|
-| `pace status` | the `statusLine` setting | prints one coloured line: context, turns, cache countdown, hint |
-| `pace now` | you | shows the current session: context window %, cache, misses, rate limits, cost |
-| `pace record` | the `SessionEnd` hook | appends the session's footprint to `~/.local/state/pace/sessions.jsonl` |
-| `pace report [--since D] [--top N]` | you | per-period table, biggest sessions, trend |
-| `pace baseline` | you | starting context of recent sessions, to catch setup creep |
-
-Status line examples:
-
-```
-ctx 182K · 45 turns · cache 41m
-ctx 312K · 120 turns · cache 52m · ↻ fresh session
-ctx 310K · 120 turns · cache cold · 310K re-write · fresh start is cheaper
-```
-
-The line is green below `warn`, yellow below `high` and red above it. The cache countdown turns
-yellow in the last 5 minutes. That is the moment to save state and clear before a break.
-
-### Install
+Claude Code loads a plugin folder placed in `~/.claude/skills/` in every session:
 
 ```sh
 git clone https://github.com/asitha-w/pace.git
-ln -s "$PWD/pace/pace.py" ~/.local/bin/pace
-ln -s "$PWD/pace/skill/pace" ~/.claude/skills/pace   # optional: ask Claude in plain words
+ln -s "$PWD/pace" ~/.claude/skills/pace
 ```
 
-Add this to `settings.json` (user or project):
+pace loads in the next session as `pace@skills-dir`. To try it in a single session instead, run
+`claude --plugin-dir ./pace`.
 
-```json
-{
-  "statusLine": { "type": "command", "command": "pace status", "refreshInterval": 60 },
-  "hooks": {
-    "SessionEnd": [ { "hooks": [ { "type": "command", "command": "pace record" } ] } ]
-  }
-}
-```
-
-### Config
-
-All settings are optional. Put them in `~/.config/pace/config.toml`:
-
-```toml
-warn = 150_000        # yellow
-high = 250_000        # red, and the hint appears
-cold_warn = 100_000   # the cold-cache warning shows only above this
-expiring = 300        # seconds before expiry when the countdown turns yellow
-cache_ttl = 3600      # fallback when Claude Code does not report the cache lifetime
-hint = "fresh session"
-```
-
-## Mod
-
-The mod runs inside Claude Code. It alerts you at the moment something happens, and it can park a
-session so the next session picks up where this one stopped.
-
-### Signals
+## Signals
 
 | Signal | Means | Shown as |
 |---|---|---|
@@ -111,7 +58,7 @@ last few prompts and the new one to Haiku. The call costs a few hundred tokens a
 your session's context. Haiku answers whether the new prompt starts a different task. Set
 `topic_check` to `off` to stop the call.
 
-### Park and resume
+## Park and resume
 
 `/pace-park` (or `[p]` on the band) writes a resume point: one small markdown file. It always holds
 the facts: cwd, branch, context, turns, the signal, the last prompts and the files touched. It can
@@ -124,7 +71,7 @@ After `/clear`, or in a new session, the band lists the resume points for this f
 
 Nothing reaches the model until you send.
 
-### Commands
+## Commands
 
 | Command | Does |
 |---|---|
@@ -136,7 +83,7 @@ Nothing reaches the model until you send.
 None of these commands uses a model turn. The bundled `pace:help` skill answers questions about the
 alerts in plain words.
 
-### Settings
+## Settings
 
 You set these at install. Change them later with `/plugin configure pace` or in `/config`. Every
 setting has a default.
@@ -152,21 +99,18 @@ setting has a default.
 | `hint` | `suggestion: start a new session` |
 | `topic_check` (`off` / `when heavy`) | `when heavy` |
 
-### Extending
+## Extending
 
-The mod adds a `$.pace` noun with four events: `pace.signal`, `pace.targets`, `pace.park` and
+pace adds a `$.pace` noun with four events: `pace.signal`, `pace.targets`, `pace.park` and
 `pace.now`. Another mod that lists `"dependencies": ["pace"]` can use them to log signals, reword
 them, or add park targets such as an issue tracker. The contract is in
-[`mod/types/index.d.ts`](mod/types/index.d.ts).
+[`types/index.d.ts`](types/index.d.ts).
 
-## Tests
+## Development
 
 ```sh
-python3 -m unittest tests.test_pace   # CLI
-claude plugin test                    # mod, run from mod/
+claude plugin validate .
+claude plugin test .
 ```
 
-## Status
-
-pace is being dogfooded. The mod lives on branch `mod-v1` and is not merged yet. The design and
-the reasoning behind each threshold are in [DESIGN.md](DESIGN.md).
+The design and the reasoning behind each threshold are in [DESIGN.md](DESIGN.md).
