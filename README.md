@@ -111,6 +111,19 @@ pace adds a `$.pace` noun with four events: `pace.signal`, `pace.targets`, `pace
 them, or add park targets such as an issue tracker. The contract is in
 [`types/index.d.ts`](types/index.d.ts).
 
+## Sister project: Cairn
+
+[Cairn](https://github.com/asitha-w/cairn) (`crn`) keeps your work as a graph of plain markdown
+nodes: what each piece of work is doing, what it waits on, and what was decided. The two projects
+split the job:
+
+- **pace** tells you when to leave a session.
+- **Cairn** remembers where the work stands, so the next session starts small.
+
+They connect through pace's extension contract. A small mod can answer `pace.targets` and
+`pace.park` to park straight into a Cairn work node, for example as a `crn log` line. Neither
+project depends on the other.
+
 ## Development
 
 ```sh
