@@ -1,5 +1,7 @@
 import type { PaceBand, PaceKind, PaceMetrics, PacePhase, PaceResumePoint, PaceSignal, PaceTarget } from '../types'
 
+export type StatusStyle = 'colour' | 'plain' | 'off'
+
 export type PaceConfig = {
   warn: number
   high: number
@@ -8,7 +10,7 @@ export type PaceConfig = {
   expiring: number
   hint: string
   big_result: number
-  status_line: boolean
+  status_line: StatusStyle
 }
 
 export const DEFAULTS: PaceConfig = {
@@ -19,7 +21,7 @@ export const DEFAULTS: PaceConfig = {
   expiring: 300,
   hint: 'suggestion: start a new session',
   big_result: 30_000,
-  status_line: true,
+  status_line: 'colour',
 }
 
 export function configFrom(options: Readonly<Record<string, unknown>>): PaceConfig {
@@ -36,7 +38,7 @@ export function configFrom(options: Readonly<Record<string, unknown>>): PaceConf
     expiring: num('expiring_minutes', DEFAULTS.expiring / 60) * 60,
     hint: typeof hint === 'string' && hint !== '' ? hint : DEFAULTS.hint,
     big_result: num('big_result', DEFAULTS.big_result),
-    status_line: options.status_line !== 'off',
+    status_line: options.status_line === 'off' || options.status_line === 'plain' ? options.status_line : 'colour',
   }
 }
 
@@ -177,28 +179,36 @@ export function hintFor(kind: PaceKind, cfg: PaceConfig): string {
   return ''
 }
 
-/** The standing status line: context, turns, cache; the hint only once the session is heavy or a cold cache is big. */
-export function statusText(track: Track, now: number, turns: number, cfg: PaceConfig): string | undefined {
+const ANSI = { green: '\x1b[32m', yellow: '\x1b[33m', red: '\x1b[31m', dim: '\x1b[2m', reset: '\x1b[0m' }
+type Tone = keyof typeof ANSI
+
+/**
+ * The standing status line: context, turns, cache; the hint only once the session is heavy or a cold cache is big.
+ * Coloured by cost: green under `warn`, yellow under `high`, red above; the cache part yellow while expiring, red once cold and big.
+ */
+export function statusText(track: Track, now: number, turns: number, cfg: PaceConfig, style: StatusStyle = 'plain'): string | undefined {
+  if (style === 'off') return undefined
   const left = remainingMs(track, now, cfg)
   if (left === undefined) return undefined
   const context = contextOf(track.last)
-  const heavy = context >= cfg.warn
-  const parts = [`${heavy ? '⚠ ' : ''}ctx ${k(context)}`, `${turns} turn${turns === 1 ? '' : 's'}`]
+  const level: Tone = context >= cfg.high ? 'red' : context >= cfg.warn ? 'yellow' : 'green'
+  const paint = (tone: Tone, text: string) => (style === 'colour' ? `${ANSI[tone]}${text}${ANSI.reset}` : text)
+  const parts = [paint(level, `${level === 'green' ? '' : '⚠ '}ctx ${k(context)}`), `${turns} turn${turns === 1 ? '' : 's'}`]
   let hint = context >= cfg.high ? cfg.hint : ''
   if (left <= 0) {
     if (context >= cfg.cold_warn) {
-      parts.push(`❄ cache cold · ${k(context)} re-write`)
+      parts.push(paint('red', `❄ cache cold · ${k(context)} re-write`))
       hint = cfg.hint
     } else {
-      parts.push('cache cold')
+      parts.push(paint('dim', 'cache cold'))
     }
   } else if (left <= cfg.expiring * 1000) {
-    parts.push(`⏳ cache ${Math.max(1, Math.ceil(left / 60_000))}m`)
+    parts.push(paint('yellow', `⏳ cache ${Math.max(1, Math.ceil(left / 60_000))}m`))
     if (!hint) hint = 'park before a break'
   } else {
-    parts.push(`cache ${Math.floor(left / 60_000)}m`)
+    parts.push(paint('dim', `cache ${Math.floor(left / 60_000)}m`))
   }
-  if (hint) parts.push(`↻ ${hint}`)
+  if (hint) parts.push(paint(level === 'green' ? 'yellow' : level, `↻ ${hint}`))
   return parts.join(' · ')
 }
 

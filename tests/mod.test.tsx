@@ -232,7 +232,7 @@ function watchStatus(on: On, lines: (string | undefined)[]): void {
   })
 }
 
-test('the status line follows each request and the clock', async ($, on) => {
+test('the status line follows each request and the clock', { options: { status_line: 'plain' } }, async ($, on) => {
   const lines: (string | undefined)[] = []
   quiet(on, [])
   watchStatus(on, lines)
@@ -252,7 +252,7 @@ test('the status line follows each request and the clock', async ($, on) => {
   expect(lines.at(-1)).toBe('⚠ ctx 183K · 3 turns · ❄ cache cold · 183K re-write · ↻ suggestion: start a new session')
 })
 
-test('/clear drops the status line', async ($, on) => {
+test('/clear drops the status line', { options: { status_line: 'plain' } }, async ($, on) => {
   const lines: (string | undefined)[] = []
   quiet(on, [])
   watchStatus(on, lines)
@@ -275,4 +275,15 @@ test('status_line off never pins a line', { options: { status_line: 'off' } }, a
   await step($, 0)
   await clock.advance(0)
   expect(lines.filter(l => l !== undefined)).toEqual([])
+})
+
+test('the status line is coloured by default', async ($, on) => {
+  const lines: (string | undefined)[] = []
+  quiet(on, [])
+  watchStatus(on, lines)
+  const clock = mock.clock(on, { now: 1_000_000 })
+  answerStep(on, [{ read: 50_000, write: 1_000, tools: [] }])
+  await step($, 0)
+  await clock.advance(0)
+  expect(lines.at(-1)).toBe('\x1b[32mctx 52K\x1b[0m · 3 turns · \x1b[2mcache 60m\x1b[0m')
 })

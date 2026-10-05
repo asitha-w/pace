@@ -51,7 +51,8 @@ const draft = atom(DRAFT, null)
 const nowState = atom(NOW, null)
 
 const HELP = [
-  'status line: ctx (context size) · turns · cache (minutes left, or cold); ⚠ past the heavy level, ❄ cold and big, ⏳ about to expire',
+  'status line: ctx (context size) · turns · cache (minutes left, or cold); green under warn, yellow under high, red above;',
+  '  ⚠ past the heavy level, ❄ cold and big, ⏳ about to expire',
   'commands: /pace-now figures · /pace-park write a resume point · /pace-resume list resume points ·',
   '  /pace-dismiss hide the alert row · /pace-close close the panes · /pace-help this',
   'keys: Ctrl+X then Tab focuses the alert row and panes · Tab/arrows move · Enter or the digit presses ·',
@@ -59,7 +60,7 @@ const HELP = [
   'signals: heavy (big context) · jump (one step added a lot) · expiring (cache about to go cold) ·',
   '  cold (next prompt re-writes the context) · rewrite (cache rebuilt mid-session) · topic (new task in a big session)',
   'turn off: /plugin configure pace (or /config) → "New topic check" = off stops the Haiku check;',
-  '  "Status line" = off hides the standing line; the thresholds are there too; /plugin disable pace turns the whole mod off',
+  '  "Status line" = plain drops the colour, off hides the line; the thresholds are there too; /plugin disable pace turns the whole mod off',
 ].join('\n')
 
 const NOW_PANE = 'pace-now'
@@ -90,11 +91,7 @@ async function emit($: EngineInterface, d: Detected) {
 }
 
 async function refreshStatus($: EngineInterface) {
-  if (!cfg.status_line) {
-    $.ui.status(undefined)
-    return
-  }
-  $.ui.status(statusText(track, await $.clock.now(), await $.session.turns(), cfg))
+  $.ui.status(statusText(track, await $.clock.now(), await $.session.turns(), cfg, cfg.status_line))
 }
 
 async function scanResume($: EngineInterface) {

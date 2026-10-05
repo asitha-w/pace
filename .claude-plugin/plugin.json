@@ -88,12 +88,13 @@
     "status_line": {
       "type": "string",
       "title": "Status line",
-      "description": "Keep one line under the prompt with the context size, turn count and cache countdown of this session",
+      "description": "One line under the prompt with the context size, turn count and cache countdown: coloured by cost (green, yellow, red), plain, or off",
       "options": [
-        "on",
+        "colour",
+        "plain",
         "off"
       ],
-      "default": "on"
+      "default": "colour"
     },
     "topic_check": {
       "type": "string",
