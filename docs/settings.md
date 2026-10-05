@@ -1,7 +1,7 @@
 # Settings
 
 Set at install, changed later with `/plugin configure pace` or in `/config`. Every setting has a
-default; a change applies in the next session.
+default; a change applies after `/reload-plugins` or in the next session.
 
 | Setting | Default | What it moves |
 |---|---|---|
@@ -33,6 +33,7 @@ default; a change applies in the next session.
 🟢 ctx 40K · 12 turns · cache cold                                           cold and small: carry on
 ```
 
-The dot is the colour: Claude Code's status line draws text only, no ANSI colour. It is the only
-standing surface pace has: the same fields every time, so you can read it without reading it. It
-disappears on `/clear`.
+Claude Code draws the line under the prompt with the mod's name in front, so on screen it reads
+`pace: 🟢 ctx 62K · …`. The dot is the colour: the status line draws text only, no ANSI colour. It
+is the only standing surface pace has: the same fields every time, so you can read it without
+reading it. It disappears on `/clear`.

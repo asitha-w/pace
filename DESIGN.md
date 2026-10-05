@@ -115,7 +115,7 @@ Park writes one small markdown file, a resume point, so a fresh session can pick
 | `topic_every` | 100 000 | context growth between readings |
 
 Every setting has a default, so installing with Enter through the dialog works; `/plugin configure` and
-`/config` change them later.
+`/config` change them later, applied after `/reload-plugins` or in the next session.
 
 ## Commands
 

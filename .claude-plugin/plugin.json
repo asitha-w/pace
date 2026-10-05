@@ -2,6 +2,10 @@
   "name": "pace",
   "version": "0.1.0",
   "description": "Shows when a session gets heavy or its prompt cache is about to go cold, and parks a session so the next one can resume it",
+  "author": {
+    "name": "Asitha Weerasinghe",
+    "url": "https://github.com/asitha-w"
+  },
   "types": "./types/index.d.ts",
   "userConfig": {
     "park_dir": {
