@@ -83,6 +83,14 @@
       "min": 1,
       "max": 59
     },
+    "toast_seconds": {
+      "type": "number",
+      "title": "Toast stays up (seconds)",
+      "description": "How long a pace toast (heavy, jump, expiring, re-write, work check) stays on screen",
+      "default": 30,
+      "min": 3,
+      "max": 300
+    },
     "hint": {
       "type": "string",
       "title": "Suggestion",
