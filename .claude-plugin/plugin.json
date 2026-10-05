@@ -85,6 +85,16 @@
       "description": "Text after the heavy and cold messages, e.g. your own way of starting fresh",
       "default": "suggestion: start a new session"
     },
+    "status_line": {
+      "type": "string",
+      "title": "Status line",
+      "description": "Keep one line under the prompt with the context size, turn count and cache countdown of this session",
+      "options": [
+        "on",
+        "off"
+      ],
+      "default": "on"
+    },
     "topic_check": {
       "type": "string",
       "title": "New topic check",

@@ -224,3 +224,55 @@ test('topic_check off never calls the model', { options: { topic_check: 'off' } 
   await $.prompt.submit({ text: 'now lets look at why the k8s alerts fire on prod', wait: false, origin: { kind: 'composer' } } as never)
   expect(calls).toBe(0)
 })
+
+function watchStatus(on: On, lines: (string | undefined)[]): void {
+  on('ui.status', ($, e) => {
+    lines.push(e.text)
+    return { value: undefined }
+  })
+}
+
+test('the status line follows each request and the clock', async ($, on) => {
+  const lines: (string | undefined)[] = []
+  quiet(on, [])
+  watchStatus(on, lines)
+  const clock = mock.clock(on, { now: 1_000_000 })
+  mock.env(on, { HOME: '/nowhere' })
+  on('session.cwd', () => ({ value: '/work' }))
+  on('session.start', ($, e) => ({ cwd: e.cwd }) as never)
+  on('command.register', () => ({ value: undefined }) as never)
+  answerStep(on, [{ read: 180_000, write: 2_000, tools: [] }])
+  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true } as never)
+  await step($, 0)
+  await clock.advance(0)
+  expect(lines.at(-1)).toBe('⚠ ctx 183K · 3 turns · cache 60m')
+  await clock.advance(56 * 60_000)
+  expect(lines.at(-1)).toBe('⚠ ctx 183K · 3 turns · ⏳ cache 4m · ↻ park before a break')
+  await clock.advance(5 * 60_000)
+  expect(lines.at(-1)).toBe('⚠ ctx 183K · 3 turns · ❄ cache cold · 183K re-write · ↻ suggestion: start a new session')
+})
+
+test('/clear drops the status line', async ($, on) => {
+  const lines: (string | undefined)[] = []
+  quiet(on, [])
+  watchStatus(on, lines)
+  const clock = mock.clock(on, { now: 1_000_000 })
+  answerStep(on, [{ read: 50_000, write: 1_000, tools: [] }])
+  on('session.end', ($, e) => ({ sessionId: e.sessionId }) as never)
+  await step($, 0)
+  await clock.advance(0)
+  expect(lines.at(-1)).toBe('ctx 52K · 3 turns · cache 60m')
+  await $.session.end({ reason: 'clear', sessionId: 'session-1' } as never)
+  expect(lines.at(-1)).toBeUndefined()
+})
+
+test('status_line off never pins a line', { options: { status_line: 'off' } }, async ($, on) => {
+  const lines: (string | undefined)[] = []
+  quiet(on, [])
+  watchStatus(on, lines)
+  const clock = mock.clock(on, { now: 1_000_000 })
+  answerStep(on, [{ read: 180_000, write: 2_000, tools: [] }])
+  await step($, 0)
+  await clock.advance(0)
+  expect(lines.filter(l => l !== undefined)).toEqual([])
+})

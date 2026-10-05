@@ -10,6 +10,7 @@ import {
   parsePoint,
   parseTopic,
   resumeMarker,
+  statusText,
   resumeText,
   shouldCheckTopic,
   textFor,
@@ -147,5 +148,38 @@ describe('topic', () => {
   test('topic text for detection and reminders', () => {
     expect(textFor('topic', { context: 322_000, turns: 1, why: 'pace mod → k8s alerts' })).toBe('new topic at 322K (pace mod → k8s alerts)')
     expect(textFor('topic', { context: 335_000, turns: 2, reminder: 1 })).toBe('still carrying the old topic · 335K re-read each turn')
+  })
+})
+
+describe('statusText', () => {
+  const cfg = configFrom({})
+  const at = (prompt: number, atMs: number) => {
+    const track = newTrack()
+    track.last = { at: atMs, prompt, read: prompt, write: 0, output: 0, model: 'm', tools: [] }
+    return track
+  }
+
+  test('nothing before the first request', () => {
+    expect(statusText(newTrack(), 0, 0, cfg)).toBeUndefined()
+  })
+
+  test('warm and small: context, turns, minutes left', () => {
+    expect(statusText(at(182_000, 0), 19 * 60_000, 45, cfg)).toBe('⚠ ctx 182K · 45 turns · cache 41m')
+    expect(statusText(at(40_000, 0), 19 * 60_000, 1, cfg)).toBe('ctx 40K · 1 turn · cache 41m')
+  })
+
+  test('heavy past high carries the hint', () => {
+    expect(statusText(at(312_000, 0), 8 * 60_000, 120, cfg)).toBe('⚠ ctx 312K · 120 turns · cache 52m · ↻ suggestion: start a new session')
+  })
+
+  test('expiring counts down and asks to park', () => {
+    expect(statusText(at(182_000, 0), 57 * 60_000 + 1, 45, cfg)).toBe('⚠ ctx 182K · 45 turns · ⏳ cache 3m · ↻ park before a break')
+  })
+
+  test('cold and big names the re-write; cold and small stays quiet', () => {
+    expect(statusText(at(310_000, 0), 61 * 60_000, 120, cfg)).toBe(
+      '⚠ ctx 310K · 120 turns · ❄ cache cold · 310K re-write · ↻ suggestion: start a new session',
+    )
+    expect(statusText(at(40_000, 0), 61 * 60_000, 12, cfg)).toBe('ctx 40K · 12 turns · cache cold')
   })
 })

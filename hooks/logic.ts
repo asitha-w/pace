@@ -8,6 +8,7 @@ export type PaceConfig = {
   expiring: number
   hint: string
   big_result: number
+  status_line: boolean
 }
 
 export const DEFAULTS: PaceConfig = {
@@ -18,6 +19,7 @@ export const DEFAULTS: PaceConfig = {
   expiring: 300,
   hint: 'suggestion: start a new session',
   big_result: 30_000,
+  status_line: true,
 }
 
 export function configFrom(options: Readonly<Record<string, unknown>>): PaceConfig {
@@ -34,6 +36,7 @@ export function configFrom(options: Readonly<Record<string, unknown>>): PaceConf
     expiring: num('expiring_minutes', DEFAULTS.expiring / 60) * 60,
     hint: typeof hint === 'string' && hint !== '' ? hint : DEFAULTS.hint,
     big_result: num('big_result', DEFAULTS.big_result),
+    status_line: options.status_line !== 'off',
   }
 }
 
@@ -172,6 +175,31 @@ export function hintFor(kind: PaceKind, cfg: PaceConfig): string {
   if (kind === 'expiring') return 'park before a break'
   if (kind === 'topic') return 'park, then start a new session (/pace-park)'
   return ''
+}
+
+/** The standing status line: context, turns, cache; the hint only once the session is heavy or a cold cache is big. */
+export function statusText(track: Track, now: number, turns: number, cfg: PaceConfig): string | undefined {
+  const left = remainingMs(track, now, cfg)
+  if (left === undefined) return undefined
+  const context = contextOf(track.last)
+  const heavy = context >= cfg.warn
+  const parts = [`${heavy ? '⚠ ' : ''}ctx ${k(context)}`, `${turns} turn${turns === 1 ? '' : 's'}`]
+  let hint = context >= cfg.high ? cfg.hint : ''
+  if (left <= 0) {
+    if (context >= cfg.cold_warn) {
+      parts.push(`❄ cache cold · ${k(context)} re-write`)
+      hint = cfg.hint
+    } else {
+      parts.push('cache cold')
+    }
+  } else if (left <= cfg.expiring * 1000) {
+    parts.push(`⏳ cache ${Math.max(1, Math.ceil(left / 60_000))}m`)
+    if (!hint) hint = 'park before a break'
+  } else {
+    parts.push(`cache ${Math.floor(left / 60_000)}m`)
+  }
+  if (hint) parts.push(`↻ ${hint}`)
+  return parts.join(' · ')
 }
 
 export type Message = {

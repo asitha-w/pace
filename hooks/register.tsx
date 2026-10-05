@@ -29,6 +29,7 @@ import {
   resumeMarker,
   resumeText,
   shouldCheckTopic,
+  statusText,
   targetList,
   textFor,
   toastText,
@@ -50,6 +51,7 @@ const draft = atom(DRAFT, null)
 const nowState = atom(NOW, null)
 
 const HELP = [
+  'status line: ctx (context size) · turns · cache (minutes left, or cold); ⚠ past the heavy level, ❄ cold and big, ⏳ about to expire',
   'commands: /pace-now figures · /pace-park write a resume point · /pace-resume list resume points ·',
   '  /pace-dismiss hide the alert row · /pace-close close the panes · /pace-help this',
   'keys: Ctrl+X then Tab focuses the alert row and panes · Tab/arrows move · Enter or the digit presses ·',
@@ -57,7 +59,7 @@ const HELP = [
   'signals: heavy (big context) · jump (one step added a lot) · expiring (cache about to go cold) ·',
   '  cold (next prompt re-writes the context) · rewrite (cache rebuilt mid-session) · topic (new task in a big session)',
   'turn off: /plugin configure pace (or /config) → "New topic check" = off stops the Haiku check;',
-  '  the thresholds are there too; /plugin disable pace turns the whole mod off',
+  '  "Status line" = off hides the standing line; the thresholds are there too; /plugin disable pace turns the whole mod off',
 ].join('\n')
 
 const NOW_PANE = 'pace-now'
@@ -85,6 +87,14 @@ async function emit($: EngineInterface, d: Detected) {
     text: textFor(d.kind, d.metrics),
     hint: hintFor(d.kind, cfg),
   })
+}
+
+async function refreshStatus($: EngineInterface) {
+  if (!cfg.status_line) {
+    $.ui.status(undefined)
+    return
+  }
+  $.ui.status(statusText(track, await $.clock.now(), await $.session.turns(), cfg))
 }
 
 async function scanResume($: EngineInterface) {
@@ -270,12 +280,15 @@ export const register: Register = (on, options) => {
       await $.command.register({ name, description, immediate: true })
     }
     await scanResume($)
+    await refreshStatus($)
     ticker?.cancel()
     ticker = $.clock.every(TICK_MS, () => {
-      if (isTurn) return
       void (async () => {
-        const detected = onTick(track, await $.clock.now(), await $.session.turns(), cfg)
-        for (const d of detected) await emit($, d)
+        if (!isTurn) {
+          const detected = onTick(track, await $.clock.now(), await $.session.turns(), cfg)
+          for (const d of detected) await emit($, d)
+        }
+        await refreshStatus($)
       })().catch(() => undefined)
     })
     return next(e)
@@ -309,6 +322,7 @@ export const register: Register = (on, options) => {
       if (contextOf(step) < cfg.warn) topicBlocked = false
       void (async () => {
         for (const d of detected) await emit($, d)
+        await refreshStatus($)
       })().catch(() => undefined)
     }
     return result
@@ -336,6 +350,7 @@ export const register: Register = (on, options) => {
       isTurn = false
       topic = undefined
       topicBlocked = false
+      $.ui.status(undefined)
       await scanResume($)
     }
     return next(e)

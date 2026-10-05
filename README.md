@@ -2,9 +2,10 @@
 
 **Know when a Claude Code session is getting expensive, and leave it cleanly.**
 
-pace is a Claude Code mod. It warns you when a session gets heavy or its prompt cache is about to go
-cold. It can also save where you are, so a fresh session picks up from there. It only nudges: it
-never clears, compacts or blocks anything, and nothing it shows enters the model's context.
+pace is a Claude Code mod. It keeps one line under the prompt with the size of the session and the
+life left in its prompt cache, and it speaks up when the session gets heavy or the cache is about
+to go cold. It can also save where you are, so a fresh session picks up from there. It only nudges:
+it never clears, compacts or blocks anything, and nothing it shows enters the model's context.
 
 ![pace overview](docs/overview.png)
 
@@ -43,6 +44,36 @@ ln -s "$PWD/pace" ~/.claude/skills/pace
 
 pace loads in the next session as `pace@skills-dir`. To try it in a single session instead, run
 `claude --plugin-dir ./pace`.
+
+## How pace talks to you
+
+A mod is only useful if it reaches you where you already look. pace uses six of the surfaces Claude
+Code gives a mod, each for one job, and nothing it draws enters the model's context.
+
+| Surface | Where | pace uses it for | Lives |
+|---|---|---|---|
+| **Status line** | one line under the prompt | the standing figures: `ctx 182K · 45 turns · cache 41m`; `⚠` once the context passes `warn`, `⏳` with a countdown in the last `expiring_minutes`, `❄` with the re-write size once the cache is cold and big; the hint text after `↻` once the session is past `high` or cold and big | always, updated after each request and every 15 s; `/clear` drops it |
+| **Toast** | a short notice that fades | each crossing, once: `heavy`, `jump`, `rewrite`, `expiring`, `topic`; park and resume confirmations | a few seconds |
+| **Band row** | a row above the prompt with buttons | the one signal that needs an action: `cold`, `expiring`, `topic`, `heavy` in that priority, with `park` and `dismiss`; the resume points for this folder with `resume`, `discard`, `all` | until it clears, or you dismiss it |
+| **Pane** | a framed region beside the transcript | `/pace-now` figures; the park dialog (target, summary on/off); the resume list | until you close it (`Esc`, `Ctrl+X X`, or `/pace-close`) |
+| **Prompt box** | the text you are about to send | resume puts the note there, so you read it before anything reaches the model | until you send or clear it |
+| **Slash commands** | `/pace-…` | one word for each of the above, so nothing depends on a button being visible | — |
+
+The rules behind the split:
+
+- **The status line is the only standing surface.** It is quiet by design: no colour, no sentence,
+  the same three fields every time, so you can read it without reading it. Turn it off with
+  `status_line` = `off`.
+- **A toast marks a moment; a band row marks a state.** Something that happened once (a big tool
+  result, a cache re-write) gets a toast and nothing more. Something that stays true until you act
+  (a cold cache, a new topic in a heavy session) gets a row that stays, with the action next to it.
+- **Nothing standing is model-facing.** Every surface above is drawn for you. The topic check is
+  the only model call, it goes to Haiku, and its answer comes back as a toast, not as context.
+- **Every button has a command.** The band and the panes can be hidden by a narrow terminal or
+  by `Ctrl+X` focus rules; `/pace-park`, `/pace-resume`, `/pace-dismiss` and `/pace-close` do the
+  same from the prompt.
+- **Keys.** `Ctrl+X` then `Tab` focuses the band and panes, `Tab` and the arrows move, `Enter` or
+  the digit presses, `Esc` returns to the prompt.
 
 ## Signals
 
@@ -102,6 +133,7 @@ setting has a default.
 | `big_result` | 30 000 |
 | `cache_ttl_minutes` / `expiring_minutes` | 60 / 5 |
 | `hint` | `suggestion: start a new session` |
+| `status_line` (`on` / `off`) | `on` |
 | `topic_check` (`off` / `when heavy`) | `when heavy` |
 
 ## Extending
