@@ -48,9 +48,10 @@ async function run($: { command: { run: (e: never) => Promise<unknown> } }, comm
   return result.text ?? ''
 }
 
-function quiet(on: On, toasts: string[]): void {
+function quiet(on: On, toasts: string[], timeouts: (number | undefined)[] = []): void {
   on('ui.toast', ($, e) => {
     toasts.push(e.text)
+    timeouts.push(e.timeoutMs)
     return { value: undefined }
   })
   on('ui.render', ($, e) => {
@@ -61,9 +62,11 @@ function quiet(on: On, toasts: string[]): void {
 
 test('pace.signal: default shows a toast and a band row', { plugins: [DRIVER] }, async ($, on) => {
   const toasts: string[] = []
-  quiet(on, toasts)
+  const timeouts: (number | undefined)[] = []
+  quiet(on, toasts, timeouts)
   expect(await run($, 'drive-signal')).toBe('signalled')
   expect(toasts).toEqual(['pace: 262K context · every turn re-reads it · suggestion: start a new session'])
+  expect(timeouts).toEqual([30_000])
 })
 
 test(

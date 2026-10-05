@@ -108,6 +108,7 @@ Park writes one small markdown file, a resume point, so a fresh session can pick
 | `big_result` | 30 000 | tokens one step must add to be a `jump` |
 | `cache_ttl_minutes` | 60 | the prompt-cache lifetime (5 or 60) |
 | `expiring_minutes` | 5 | when the countdown starts |
+| `toast_seconds` | 30 | how long a signal toast stays up |
 | `hint` | `suggestion: start a new session` | the suggestion after `heavy` and `cold` |
 | `status_line` | `colour` | `plain` drops the dot; `off` hides the line |
 | `topic_check` | `on` | `off` stops the Haiku calls |

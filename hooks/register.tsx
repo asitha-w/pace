@@ -204,9 +204,8 @@ export const register: Register = (on, options) => {
             await built.state.set(DISMISSED, (hidden.value ?? []).filter(kind => kind !== s.kind))
           }
         }
-        const isTopic = s.kind === 'topic'
-        if ((s.phase === 'enter' && s.kind !== 'cold') || (isTopic && s.phase === 'update')) {
-          built.ui.toast(toastText(s), { timeoutMs: isTopic ? 10_000 : 6000 })
+        if ((s.phase === 'enter' && s.kind !== 'cold') || (s.kind === 'topic' && s.phase === 'update')) {
+          built.ui.toast(toastText(s), { timeoutMs: cfg.toast * 1000 })
         }
         return true
       },

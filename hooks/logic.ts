@@ -8,6 +8,7 @@ export type PaceConfig = {
   cold_warn: number
   cache_ttl: number
   expiring: number
+  toast: number
   hint: string
   big_result: number
   status_line: StatusStyle
@@ -22,6 +23,7 @@ export const DEFAULTS: PaceConfig = {
   cold_warn: 100_000,
   cache_ttl: 3600,
   expiring: 300,
+  toast: 30,
   hint: 'suggestion: start a new session',
   big_result: 30_000,
   status_line: 'colour',
@@ -42,6 +44,7 @@ export function configFrom(options: Readonly<Record<string, unknown>>): PaceConf
     cold_warn: num('cold_warn', DEFAULTS.cold_warn),
     cache_ttl: num('cache_ttl_minutes', DEFAULTS.cache_ttl / 60) * 60,
     expiring: num('expiring_minutes', DEFAULTS.expiring / 60) * 60,
+    toast: num('toast_seconds', DEFAULTS.toast),
     hint: typeof hint === 'string' && hint !== '' ? hint : DEFAULTS.hint,
     big_result: num('big_result', DEFAULTS.big_result),
     status_line: options.status_line === 'off' || options.status_line === 'plain' ? options.status_line : 'colour',

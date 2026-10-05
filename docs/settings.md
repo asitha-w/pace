@@ -12,6 +12,7 @@ default; a change applies after `/reload-plugins` or in the next session.
 | `big_result` | 30 000 | tokens one step must add to the context to count as a `jump` |
 | `cache_ttl_minutes` | 60 | the prompt-cache lifetime the countdown runs from: 60 on the 1-hour cache, 5 on the 5-minute one |
 | `expiring_minutes` | 5 | minutes before the cache goes cold when the countdown starts |
+| `toast_seconds` | 30 | how long a signal toast stays on screen |
 | `hint` | `suggestion: start a new session` | the text after `↻` once the session is past `high` or cold and big |
 | `topic_check` | `on` | the work check; `off` never calls a model |
 | `topic_at` | 100 000 | context at which Haiku takes the baseline reading of the work |
