@@ -1,69 +1,99 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="640" viewBox="0 0 1680 640" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="20">
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="760" viewBox="0 0 1680 760" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="20">
   <defs>
     <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/></marker>
     <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b45309"/></marker>
+    <marker id="v" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7c3aed"/></marker>
   </defs>
-  <rect width="1680" height="640" fill="#ffffff"/>
+  <rect width="1680" height="760" fill="#ffffff"/>
 
   <!-- 1 session -->
-  <rect x="30" y="60" width="330" height="250" rx="16" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/>
-  <text x="56" y="105" font-size="26" font-weight="700" fill="#111827">1 · Claude Code session</text>
-  <text x="56" y="150" fill="#374151">• usage of every request</text>
-  <text x="56" y="180" fill="#374151">  (context, cache read, cache write)</text>
-  <text x="56" y="215" fill="#374151">• the clock, for the cache lifetime</text>
-  <text x="56" y="250" fill="#374151">• the prompts you type</text>
-  <text x="56" y="290" fill="#6b7280" font-size="18">read only, nothing injected</text>
+  <rect x="30" y="50" width="300" height="200" rx="16" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/>
+  <text x="54" y="92" font-size="25" font-weight="700" fill="#111827">Claude Code session</text>
+  <text x="54" y="134" fill="#374151">• usage of every request</text>
+  <text x="54" y="166" fill="#374151">• the clock, for the cache</text>
+  <text x="54" y="198" fill="#374151">• the prompts you type</text>
+  <text x="54" y="234" fill="#6b7280" font-size="17">read only, nothing injected</text>
 
-  <line x1="360" y1="185" x2="430" y2="185" stroke="#6b7280" stroke-width="3" marker-end="url(#a)"/>
+  <line x1="330" y1="150" x2="400" y2="150" stroke="#6b7280" stroke-width="3" marker-end="url(#a)"/>
 
-  <!-- 2 pace mod -->
-  <rect x="432" y="40" width="520" height="290" rx="16" fill="#eff6ff" stroke="#2563eb" stroke-width="3"/>
-  <text x="458" y="86" font-size="26" font-weight="700" fill="#1e3a8a">2 · pace measures and decides</text>
-  <text x="458" y="124" fill="#374151">context × turns is the cost; the cache is the trap</text>
-  <g font-size="19" font-weight="700" fill="#1d4ed8">
-    <rect x="458" y="145" width="140" height="42" rx="21" fill="#fff" stroke="#2563eb" stroke-width="2"/><text x="528" y="173" text-anchor="middle">heavy</text>
-    <rect x="612" y="145" width="140" height="42" rx="21" fill="#fff" stroke="#2563eb" stroke-width="2"/><text x="682" y="173" text-anchor="middle">jump</text>
-    <rect x="766" y="145" width="140" height="42" rx="21" fill="#fff" stroke="#2563eb" stroke-width="2"/><text x="836" y="173" text-anchor="middle">rewrite</text>
-    <rect x="458" y="200" width="140" height="42" rx="21" fill="#fff" stroke="#2563eb" stroke-width="2"/><text x="528" y="228" text-anchor="middle">expiring</text>
-    <rect x="612" y="200" width="140" height="42" rx="21" fill="#fff" stroke="#2563eb" stroke-width="2"/><text x="682" y="228" text-anchor="middle">cold</text>
-    <rect x="766" y="200" width="140" height="42" rx="21" fill="#fff" stroke="#2563eb" stroke-width="2"/><text x="836" y="228" text-anchor="middle">topic*</text>
+  <!-- 2 pace -->
+  <rect x="402" y="30" width="470" height="240" rx="16" fill="#eff6ff" stroke="#2563eb" stroke-width="3"/>
+  <text x="426" y="74" font-size="25" font-weight="700" fill="#1e3a8a">pace measures</text>
+  <text x="426" y="110" fill="#374151">context × turns is the cost; the cache is the trap</text>
+  <g font-size="18" font-weight="700" fill="#1d4ed8">
+    <rect x="426" y="130" width="130" height="38" rx="19" fill="#fff" stroke="#2563eb" stroke-width="2"/><text x="491" y="156" text-anchor="middle">heavy</text>
+    <rect x="568" y="130" width="130" height="38" rx="19" fill="#fff" stroke="#2563eb" stroke-width="2"/><text x="633" y="156" text-anchor="middle">jump</text>
+    <rect x="710" y="130" width="130" height="38" rx="19" fill="#fff" stroke="#2563eb" stroke-width="2"/><text x="775" y="156" text-anchor="middle">rewrite</text>
+    <rect x="426" y="180" width="130" height="38" rx="19" fill="#fff" stroke="#2563eb" stroke-width="2"/><text x="491" y="206" text-anchor="middle">expiring</text>
+    <rect x="568" y="180" width="130" height="38" rx="19" fill="#fff" stroke="#2563eb" stroke-width="2"/><text x="633" y="206" text-anchor="middle">cold</text>
+    <rect x="710" y="180" width="130" height="38" rx="19" fill="#fff" stroke="#7c3aed" stroke-width="2"/><text x="775" y="206" text-anchor="middle" fill="#6d28d9">topic</text>
   </g>
-  <text x="458" y="276" fill="#6b7280" font-size="18">no model calls, except *topic: one small Haiku question</text>
-  <text x="458" y="304" fill="#6b7280" font-size="18">nudges, never acts: no auto /clear, no compaction, no blocking</text>
+  <text x="426" y="250" fill="#6b7280" font-size="17">nudges, never acts: no auto /clear, no compaction, no blocking</text>
 
-  <line x1="952" y1="185" x2="1022" y2="185" stroke="#6b7280" stroke-width="3" marker-end="url(#a)"/>
+  <line x1="872" y1="150" x2="942" y2="150" stroke="#6b7280" stroke-width="3" marker-end="url(#a)"/>
 
   <!-- 3 you see -->
-  <rect x="1024" y="40" width="626" height="290" rx="16" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
-  <text x="1050" y="86" font-size="26" font-weight="700" fill="#14532d">3 · You see, the model does not</text>
-  <text x="1050" y="124" fill="#374151">status line under the prompt, always:</text>
-  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="18">
-    <rect x="1050" y="138" width="574" height="92" rx="8" fill="#111827"/>
-    <text x="1064" y="164"><tspan fill="#4ade80">●</tspan><tspan fill="#d1d5db"> ctx 62K</tspan><tspan fill="#d1d5db"> · 12 turns · </tspan><tspan fill="#9ca3af">cache 52m</tspan></text>
-    <text x="1064" y="190"><tspan fill="#facc15">●</tspan><tspan fill="#d1d5db"> ⚠ ctx 182K</tspan><tspan fill="#d1d5db"> · 45 turns · </tspan><tspan fill="#d1d5db">⏳ cache 3m · ↻ park before a break</tspan></text>
-    <text x="1064" y="216"><tspan fill="#f87171">●</tspan><tspan fill="#d1d5db"> ⚠ ctx 310K</tspan><tspan fill="#d1d5db"> · 120 turns · </tspan><tspan fill="#d1d5db">❄ cache cold · 310K re-write · ↻ start a new session</tspan></text>
+  <rect x="944" y="30" width="706" height="240" rx="16" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="968" y="74" font-size="25" font-weight="700" fill="#14532d">You see, the model does not</text>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17">
+    <rect x="968" y="90" width="658" height="96" rx="8" fill="#111827"/>
+    <text x="982" y="117"><tspan fill="#4ade80">●</tspan><tspan fill="#d1d5db"> ctx 120K · 14 turns · cache 52m · on: pace status line</tspan></text>
+    <text x="982" y="144"><tspan fill="#facc15">●</tspan><tspan fill="#d1d5db"> ⚠ ctx 182K · 45 turns · ⏳ cache 3m · ↻ park before a break</tspan></text>
+    <text x="982" y="171"><tspan fill="#f87171">●</tspan><tspan fill="#d1d5db"> ⚠ ctx 322K · 60 turns · cache 41m · ↻ new session · ⇄ on: k8s alerts</tspan></text>
   </g>
-  <text x="1050" y="262" fill="#374151">• toast when a signal fires  • band row with [park] [dismiss] while it stands</text>
-  <text x="1050" y="292" fill="#374151">• /pace-now pane with every figure  • /pace-help</text>
-  <text x="1050" y="320" fill="#6b7280" font-size="18">dot: green cheap · yellow heavy · red expensive or cold and big</text>
+  <text x="968" y="218" fill="#374151">status line always · toast when a signal fires · band row with [park] [dismiss]</text>
+  <text x="968" y="250" fill="#6b7280" font-size="17">/pace-now pane with every figure and the work history · /pace-help</text>
+
+  <!-- Haiku loop -->
+  <line x1="775" y1="270" x2="775" y2="318" stroke="#7c3aed" stroke-width="3" marker-end="url(#v)"/>
+  <rect x="402" y="320" width="1248" height="190" rx="16" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="426" y="360" font-size="25" font-weight="700" fill="#4c1d95">The work check: one small Haiku loop</text>
+  <g font-size="18">
+    <rect x="426" y="384" width="260" height="92" rx="12" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+    <text x="556" y="414" text-anchor="middle" font-weight="700" fill="#4c1d95">at 100K: baseline</text>
+    <text x="556" y="440" text-anchor="middle" fill="#374151">Haiku reads the last 10 prompts,</text>
+    <text x="556" y="462" text-anchor="middle" fill="#374151">writes one line → "on: …"</text>
+
+    <line x1="686" y1="430" x2="736" y2="430" stroke="#7c3aed" stroke-width="3" marker-end="url(#v)"/>
+
+    <rect x="738" y="384" width="260" height="92" rx="12" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+    <text x="868" y="414" text-anchor="middle" font-weight="700" fill="#4c1d95">every +100K: read again</text>
+    <text x="868" y="440" text-anchor="middle" fill="#374151">last 10 prompts + the baseline</text>
+    <text x="868" y="462" text-anchor="middle" fill="#374151">+ the previous reading</text>
+
+    <line x1="998" y1="430" x2="1048" y2="430" stroke="#7c3aed" stroke-width="3" marker-end="url(#v)"/>
+
+    <rect x="1050" y="384" width="150" height="92" rx="12" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+    <text x="1125" y="424" text-anchor="middle" font-weight="700" fill="#4c1d95">same task?</text>
+    <text x="1125" y="452" text-anchor="middle" fill="#374151">yes / no</text>
+
+    <line x1="1200" y1="408" x2="1250" y2="408" stroke="#16a34a" stroke-width="3" marker-end="url(#a)"/>
+    <text x="1262" y="398" fill="#14532d" font-weight="700">yes</text>
+    <text x="1262" y="420" fill="#374151">quiet; "on:" updates</text>
+
+    <line x1="1200" y1="456" x2="1250" y2="456" stroke="#dc2626" stroke-width="3" marker-end="url(#a)"/>
+    <text x="1262" y="449" fill="#991b1b" font-weight="700">no</text>
+    <text x="1262" y="471" fill="#374151">toast: started · then · now; ⇄ on the line</text>
+  </g>
+  <path d="M1125,476 L1125,496 L868,496 L868,478" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 6" marker-end="url(#v)"/>
+  <text x="996" y="492" text-anchor="middle" fill="#6d28d9" font-size="15">next interval, never blocking</text>
 
   <!-- 4 park -->
-  <line x1="1337" y1="330" x2="1337" y2="398" stroke="#6b7280" stroke-width="3" marker-end="url(#a)"/>
-  <text x="1352" y="372" fill="#6b7280" font-size="18">/pace-park, or [park] on the row</text>
-  <rect x="1024" y="400" width="626" height="200" rx="16" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
-  <text x="1050" y="446" font-size="26" font-weight="700" fill="#78350f">4 · Park → resume point</text>
-  <text x="1050" y="486" fill="#374151">one small markdown file: folder, branch, context, turns,</text>
-  <text x="1050" y="516" fill="#374151">the signal, your last prompts, the files touched,</text>
-  <text x="1050" y="546" fill="#374151">and a model-written summary while the cache is warm (cheap)</text>
-  <text x="1050" y="582" fill="#6b7280" font-size="18">then /clear, or close the session</text>
+  <line x1="1297" y1="270" x2="1297" y2="318" stroke="#6b7280" stroke-width="0"/>
+  <line x1="1480" y1="510" x2="1480" y2="548" stroke="#6b7280" stroke-width="3" marker-end="url(#a)"/>
+  <text x="1494" y="536" fill="#6b7280" font-size="16">/pace-park or [park]</text>
+  <rect x="944" y="550" width="706" height="180" rx="16" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="968" y="592" font-size="25" font-weight="700" fill="#78350f">Park → resume point</text>
+  <text x="968" y="630" fill="#374151">one small markdown file: folder, branch, context, turns, the signal,</text>
+  <text x="968" y="660" fill="#374151">your last prompts, the files touched, a summary while the cache is warm</text>
+  <text x="968" y="700" fill="#6b7280" font-size="17">then /clear, or close the session</text>
 
-  <!-- 5 next session -->
-  <line x1="1022" y1="500" x2="432" y2="500" stroke="#b45309" stroke-width="3" stroke-dasharray="10 8" marker-end="url(#b)"/>
-  <text x="727" y="488" text-anchor="middle" fill="#92400e" font-size="18">after /clear or in a new session in this folder</text>
-  <rect x="30" y="400" width="400" height="200" rx="16" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
-  <text x="56" y="446" font-size="26" font-weight="700" fill="#78350f">5 · Next session starts small</text>
-  <text x="56" y="486" fill="#374151">a row lists the resume points:</text>
-  <text x="56" y="516" fill="#374151">[resume] puts the note in the prompt box,</text>
-  <text x="56" y="546" fill="#374151">[discard] deletes it.</text>
-  <text x="56" y="582" fill="#6b7280" font-size="18">nothing is sent until you send</text>
+  <!-- 5 next -->
+  <line x1="942" y1="640" x2="402" y2="640" stroke="#b45309" stroke-width="3" stroke-dasharray="10 8" marker-end="url(#b)"/>
+  <text x="672" y="628" text-anchor="middle" fill="#92400e" font-size="16">after /clear, or a new session in this folder</text>
+  <rect x="30" y="550" width="370" height="180" rx="16" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="54" y="592" font-size="25" font-weight="700" fill="#78350f">Next session starts small</text>
+  <text x="54" y="630" fill="#374151">a row lists the resume points:</text>
+  <text x="54" y="660" fill="#374151">[resume] fills the prompt box, [discard] deletes</text>
+  <text x="54" y="700" fill="#6b7280" font-size="17">nothing is sent until you send</text>
 </svg>
