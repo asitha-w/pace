@@ -39,7 +39,7 @@
     <rect x="968" y="90" width="658" height="96" rx="8" fill="#111827"/>
     <text x="982" y="117"><tspan fill="#4ade80">●</tspan><tspan fill="#d1d5db"> ctx 120K · 14 turns · cache 52m · on: pace status line</tspan></text>
     <text x="982" y="144"><tspan fill="#facc15">●</tspan><tspan fill="#d1d5db"> ⚠ ctx 182K · 45 turns · ⏳ cache 3m · ↻ park before a break</tspan></text>
-    <text x="982" y="171"><tspan fill="#f87171">●</tspan><tspan fill="#d1d5db"> ⚠ ctx 322K · 60 turns · cache 41m · ↻ new session · ⇄ on: k8s alerts</tspan></text>
+    <text x="982" y="171"><tspan fill="#f87171">●</tspan><tspan fill="#d1d5db"> ⚠ ctx 322K · 60 turns · ↻ new session · ⇄ on: k8s alerts</tspan></text>
   </g>
   <text x="968" y="218" fill="#374151">status line always · toast when a signal fires · band row with [park] [dismiss]</text>
   <text x="968" y="250" fill="#6b7280" font-size="17">/pace-now pane with every figure and the work history · /pace-help</text>
@@ -75,8 +75,8 @@
     <text x="1262" y="449" fill="#991b1b" font-weight="700">no</text>
     <text x="1262" y="471" fill="#374151">toast: started · then · now; ⇄ on the line</text>
   </g>
-  <path d="M1125,476 L1125,496 L868,496 L868,478" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 6" marker-end="url(#v)"/>
-  <text x="996" y="492" text-anchor="middle" fill="#6d28d9" font-size="15">next interval, never blocking</text>
+  <path d="M1125,476 L1125,500 L868,500 L868,478" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 6" marker-end="url(#v)"/>
+  <text x="996" y="491" text-anchor="middle" fill="#6d28d9" font-size="14">next interval, never blocking</text>
 
   <!-- 4 park -->
   <line x1="1297" y1="270" x2="1297" y2="318" stroke="#6b7280" stroke-width="0"/>
@@ -93,7 +93,8 @@
   <text x="672" y="628" text-anchor="middle" fill="#92400e" font-size="16">after /clear, or a new session in this folder</text>
   <rect x="30" y="550" width="370" height="180" rx="16" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
   <text x="54" y="592" font-size="25" font-weight="700" fill="#78350f">Next session starts small</text>
-  <text x="54" y="630" fill="#374151">a row lists the resume points:</text>
-  <text x="54" y="660" fill="#374151">[resume] fills the prompt box, [discard] deletes</text>
-  <text x="54" y="700" fill="#6b7280" font-size="17">nothing is sent until you send</text>
+  <text x="54" y="628" fill="#374151">a row lists the resume points:</text>
+  <text x="54" y="656" fill="#374151">[resume] fills the prompt box,</text>
+  <text x="54" y="684" fill="#374151">[discard] deletes it</text>
+  <text x="54" y="714" fill="#6b7280" font-size="17">nothing is sent until you send</text>
 </svg>
