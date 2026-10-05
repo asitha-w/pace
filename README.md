@@ -70,6 +70,13 @@ only, no ANSI colour, which is why a glyph carries it. It is the only standing s
 and it is quiet by design: the same three fields every time, so you can read it without reading
 it. `status_line` = `plain` drops the dot, `off` hides the line. The line disappears on `/clear`.
 
+The levels are yours to set. `warn` (default 150 000) is where the dot turns yellow, the `⚠`
+appears and the `heavy` toast fires. `high` (default 250 000) is where it turns red, the hint
+appears and the band row stays. `cold_warn` (default 100 000) is the context below which a cold
+cache is not worth a warning. `expiring_minutes` (default 5) is when the countdown starts, and
+`cache_ttl_minutes` (default 60) is the cache lifetime it counts from. Change any of them with
+`/plugin configure pace`, or in `/config`; they take effect in the next session.
+
 ## How pace talks to you
 
 A mod is only useful if it reaches you where you already look. pace uses six of the surfaces
