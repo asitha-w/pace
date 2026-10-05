@@ -1,0 +1,126 @@
+{
+  "name": "pace",
+  "version": "0.1.0",
+  "description": "Shows when a session gets heavy or its prompt cache is about to go cold, and parks a session so the next one can resume it",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "park_dir": {
+      "type": "directory",
+      "title": "Resume point folder",
+      "description": "Where park writes resume points (one small markdown file each). Leave empty for ~/.local/state/pace/parked",
+      "default": ""
+    },
+    "summary": {
+      "type": "string",
+      "title": "Summary when parking",
+      "description": "Add a model-written summary to a resume point: never, only while the prompt cache is warm (cheap), or always",
+      "options": [
+        "never",
+        "warm",
+        "always"
+      ],
+      "default": "warm"
+    },
+    "resume_scope": {
+      "type": "string",
+      "title": "Show resume points from",
+      "description": "Only resume points parked in this folder, or all of them",
+      "options": [
+        "folder",
+        "everywhere"
+      ],
+      "default": "folder"
+    },
+    "warn": {
+      "type": "number",
+      "title": "Heavy: toast at",
+      "description": "Context size (tokens) that toasts once: every turn now re-reads this much",
+      "default": 150000,
+      "min": 10000,
+      "max": 2000000
+    },
+    "high": {
+      "type": "number",
+      "title": "Heavy: band at",
+      "description": "Context size (tokens) that keeps a row above the prompt",
+      "default": 250000,
+      "min": 10000,
+      "max": 2000000
+    },
+    "cold_warn": {
+      "type": "number",
+      "title": "Cold cache: show from",
+      "description": "Context size (tokens) from which a cold cache gets a row; below it a re-write is cheap",
+      "default": 100000,
+      "min": 0,
+      "max": 2000000
+    },
+    "big_result": {
+      "type": "number",
+      "title": "Jump: tokens",
+      "description": "Tokens one step must add to the context to count as a jump",
+      "default": 30000,
+      "min": 1000,
+      "max": 1000000
+    },
+    "cache_ttl_minutes": {
+      "type": "number",
+      "title": "Cache lifetime (minutes)",
+      "description": "How long the prompt cache lives after a request: 60 on the 1-hour cache, 5 on the 5-minute one",
+      "default": 60,
+      "min": 1,
+      "max": 60
+    },
+    "expiring_minutes": {
+      "type": "number",
+      "title": "Countdown from (minutes)",
+      "description": "Minutes before the cache goes cold when the countdown starts",
+      "default": 5,
+      "min": 1,
+      "max": 59
+    },
+    "hint": {
+      "type": "string",
+      "title": "Suggestion",
+      "description": "Text after the heavy and cold messages, e.g. your own way of starting fresh",
+      "default": "suggestion: start a new session"
+    },
+    "status_line": {
+      "type": "string",
+      "title": "Status line",
+      "description": "One line under the prompt with the context size, turn count and cache countdown: with a coloured dot by cost (green, yellow, red), plain, or off",
+      "options": [
+        "colour",
+        "plain",
+        "off"
+      ],
+      "default": "colour"
+    },
+    "topic_check": {
+      "type": "string",
+      "title": "Work check",
+      "description": "Ask a small model (Haiku, a few hundred tokens) what the work is at the first level below, then at every interval whether it is still the same task, and toast when it is not. Off never calls a model",
+      "options": [
+        "on",
+        "off"
+      ],
+      "default": "on"
+    },
+    "topic_at": {
+      "type": "number",
+      "title": "Work check: baseline at",
+      "description": "Context size (tokens) at which the first reading of the work is taken and shown after \"on:\"",
+      "default": 100000,
+      "min": 10000,
+      "max": 2000000
+    },
+    "topic_every": {
+      "type": "number",
+      "title": "Work check: then every",
+      "description": "Context growth (tokens) between one reading of the work and the next",
+      "default": 100000,
+      "min": 20000,
+      "max": 2000000
+    }
+  }
+}
