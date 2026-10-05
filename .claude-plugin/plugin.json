@@ -98,13 +98,29 @@
     },
     "topic_check": {
       "type": "string",
-      "title": "New topic check",
-      "description": "Once the context is past the toast level, ask a small model (Haiku, a few hundred tokens) whether a new prompt starts a different task, and suggest parking. Set off to never call a model",
+      "title": "Work check",
+      "description": "Ask a small model (Haiku, a few hundred tokens) what the work is at the first level below, then at every interval whether it is still the same task, and toast when it is not. Off never calls a model",
       "options": [
-        "off",
-        "when heavy"
+        "on",
+        "off"
       ],
-      "default": "when heavy"
+      "default": "on"
+    },
+    "topic_at": {
+      "type": "number",
+      "title": "Work check: baseline at",
+      "description": "Context size (tokens) at which the first reading of the work is taken and shown after \"on:\"",
+      "default": 100000,
+      "min": 10000,
+      "max": 2000000
+    },
+    "topic_every": {
+      "type": "number",
+      "title": "Work check: then every",
+      "description": "Context growth (tokens) between one reading of the work and the next",
+      "default": 100000,
+      "min": 20000,
+      "max": 2000000
     }
   }
 }

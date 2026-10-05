@@ -1,15 +1,16 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, PluginOptions, Register } from 'claude-code'
 
-import type { Pace, PaceKind, PaceNow, PaceParkDraft, PaceResumePoint, PaceSignal } from '../types'
+import type { Pace, PaceCapture, PaceKind, PaceNow, PaceParkDraft, PaceResumePoint, PaceSignal } from '../types'
 import {
   OLD_MS,
   TOPIC_MODEL,
-  TOPIC_REMIND_AT,
   OWN_TARGETS,
   SUMMARY_PROMPT,
   age,
   appendNote,
+  captureDue,
+  capturePrompt,
   configFrom,
   contextOf,
   filesTouched,
@@ -23,17 +24,16 @@ import {
   onStep,
   onTick,
   parsePoint,
-  parseTopic,
+  parseCapture,
   remainingMs,
   resolveDir,
   resumeMarker,
   resumeText,
-  shouldCheckTopic,
+  retryAt,
   statusText,
   targetList,
   textFor,
   toastText,
-  topicPrompt,
   withSignal,
 } from './logic'
 import type { Detected, Message, PaceConfig, Track } from './logic'
@@ -58,8 +58,10 @@ const HELP = [
   'keys: Ctrl+X then Tab focuses the alert row and panes · Tab/arrows move · Enter or the digit presses ·',
   '  Esc back to the prompt · Ctrl+X then X closes a pane',
   'signals: heavy (big context) · jump (one step added a lot) · expiring (cache about to go cold) ·',
-  '  cold (next prompt re-writes the context) · rewrite (cache rebuilt mid-session) · topic (new task in a big session)',
-  'turn off: /plugin configure pace (or /config) → "New topic check" = off stops the Haiku check;',
+  '  cold (next prompt re-writes the context) · rewrite (cache rebuilt mid-session) · topic (the work changed)',
+  'work check: at 100K Haiku reads your last prompts and writes one line (the baseline, shown after "on:");',
+  '  every 100K it reads them again and toasts when the work is a different task, with started / before / now',
+  'turn off: /plugin configure pace (or /config) → "Work check" = off stops the Haiku calls;',
   '  "Status line" = plain drops the colour, off hides the line; the thresholds are there too; /plugin disable pace turns the whole mod off',
 ].join('\n')
 
@@ -67,7 +69,7 @@ const NOW_PANE = 'pace-now'
 const PARK_PANE = 'pace-park'
 const RESUME_PANE = 'pace-resume'
 const TICK_MS = 15_000
-const BAND_ORDER: PaceKind[] = ['cold', 'expiring', 'topic', 'heavy']
+const BAND_ORDER: PaceKind[] = ['cold', 'expiring', 'heavy']
 const ICON: Record<PaceKind, string> = { heavy: '⚠', jump: '↑', expiring: '⏳', cold: '❄', rewrite: '↻', topic: '⇄' }
 
 let cfg: PaceConfig = configFrom({})
@@ -76,8 +78,9 @@ let track: Track = newTrack()
 let isTurn = false
 let pending: { path: string; marker: string } | undefined
 let ticker: { cancel: () => void } | undefined
-let topic: { turnsSince: number; why: string } | undefined
-let topicBlocked = false
+let captures: PaceCapture[] = []
+let capturing = false
+let notBefore = 0
 
 async function emit($: EngineInterface, d: Detected) {
   await $.pace.signal({
@@ -86,12 +89,12 @@ async function emit($: EngineInterface, d: Detected) {
     sessionId: await $.session.id(),
     metrics: d.metrics,
     text: textFor(d.kind, d.metrics),
-    hint: hintFor(d.kind, cfg),
+    hint: d.kind === 'topic' && d.phase === 'enter' ? '' : hintFor(d.kind, cfg),
   })
 }
 
 async function refreshStatus($: EngineInterface) {
-  $.ui.status(statusText(track, await $.clock.now(), await $.session.turns(), cfg, cfg.status_line))
+  $.ui.status(statusText(track, await $.clock.now(), await $.session.turns(), cfg, cfg.status_line, captures.at(-1)))
 }
 
 async function scanResume($: EngineInterface) {
@@ -138,7 +141,6 @@ async function doPark($: EngineInterface) {
   $.ui.toast(d.summary ? 'pace: parking, writing the summary…' : 'pace: parking…')
   const parked = await $.pace.park({ target: d.target, reason: d.reason, summary: d.summary })
   await update($, draft, () => null)
-  if (parked.location) await closeTopic($, false)
   $.ui.toast(parked.location ? `pace: parked → ${parked.location}` : `pace: nothing handled target ${d.target}`, {
     timeoutMs: 8000,
   })
@@ -158,24 +160,31 @@ async function doResume($: EngineInterface, point: PaceResumePoint) {
   })
 }
 
-async function checkTopic($: EngineInterface, text: string) {
-  const context = contextOf(track.last)
-  const messages = (await $.session.messages()) as unknown as Message[]
-  const clipped = text.trim().replace(/\s+/g, ' ')
-  const prior = lastPrompts(messages, 6).filter(p => !clipped.startsWith(p.replace(/…$/, ''))).slice(-5)
-  if (!shouldCheckTopic(text, prior, context, cfg, opts.topic_check, topic !== undefined || topicBlocked)) return
-  const answer = await $.model.complete({ model: TOPIC_MODEL, prompt: topicPrompt(prior, text), maxTokens: 120 })
-  const verdict = answer.isAnswered ? parseTopic(answer.text) : undefined
-  if (!verdict || verdict.sameTask || topic !== undefined) return
-  topic = { turnsSince: 0, why: verdict.why }
-  await emit($, { kind: 'topic', phase: 'enter', metrics: { context, turns: await $.session.turns(), why: verdict.why } })
-}
-
-async function closeTopic($: EngineInterface, blocked: boolean) {
-  topicBlocked = blocked
-  if (!topic) return
-  topic = undefined
-  await emit($, { kind: 'topic', phase: 'clear', metrics: { context: contextOf(track.last), turns: 0 } })
+async function maybeCapture($: EngineInterface, context: number) {
+  const due = captureDue(captures, context, cfg, notBefore)
+  if (!due || capturing) return
+  capturing = true
+  try {
+    const messages = (await $.session.messages()) as unknown as Message[]
+    const prompts = lastPrompts(messages, 10)
+    if (prompts.length < 3) return
+    const baseline = captures[0]?.text
+    const previous = captures.length > 1 ? captures.at(-1)?.text : undefined
+    const answer = await $.model.complete({ model: TOPIC_MODEL, prompt: capturePrompt(prompts, baseline, previous), maxTokens: 160 })
+    const read = answer.isAnswered ? parseCapture(answer.text, baseline !== undefined) : undefined
+    if (!read) {
+      notBefore = retryAt(context)
+      return
+    }
+    const turns = await $.session.turns()
+    captures.push({ context, turns, text: read.now, drifted: !read.sameTask, why: read.why })
+    if (due === 'baseline' || !read.sameTask) {
+      await emit($, { kind: 'topic', phase: due === 'baseline' ? 'enter' : 'update', metrics: { context, turns, why: read.why, captures: [...captures] } })
+    }
+    await refreshStatus($)
+  } finally {
+    capturing = false
+  }
 }
 
 export const register: Register = (on, options) => {
@@ -257,6 +266,7 @@ export const register: Register = (on, options) => {
           rateLimits: usage.rateLimits.map(r => ({ kind: r.kind, percentUsed: r.percentUsed, resetsAt: r.resetsAt })),
           costUsd: usage.cost?.usd,
           active: BAND_ORDER.filter(kind => isBandKind(kind) && shown[kind] !== undefined),
+          captures: [...captures],
         }
         await built.state.set(NOW, value)
         return value
@@ -298,7 +308,6 @@ export const register: Register = (on, options) => {
       pending = undefined
       await removePoints($, [path])
     }
-    if (e.origin.kind === 'composer') void checkTopic($, e.text).catch(() => undefined)
     return next(e)
   })
 
@@ -316,27 +325,17 @@ export const register: Register = (on, options) => {
         tools: result.toolUses.map(use => use.tool),
       }
       const detected = onStep(track, step, await $.session.turns(), cfg)
-      if (contextOf(step) < cfg.warn) topicBlocked = false
       void (async () => {
         for (const d of detected) await emit($, d)
         await refreshStatus($)
+        await maybeCapture($, contextOf(step))
       })().catch(() => undefined)
     }
     return result
   })
 
   on('turn.complete', async ($, e, next) => {
-    if (e.agentId === undefined) {
-      isTurn = false
-      if (topic) {
-        topic.turnsSince += 1
-        const reminder = TOPIC_REMIND_AT.indexOf(topic.turnsSince) + 1
-        if (reminder > 0) {
-          const metrics = { context: contextOf(track.last), turns: await $.session.turns(), why: topic.why, reminder }
-          void emit($, { kind: 'topic', phase: 'update', metrics }).catch(() => undefined)
-        }
-      }
-    }
+    if (e.agentId === undefined) isTurn = false
     return next(e)
   })
 
@@ -345,8 +344,9 @@ export const register: Register = (on, options) => {
       for (const kind of BAND_ORDER) await emit($, { kind, phase: 'clear', metrics: { context: 0, turns: 0 } })
       track = newTrack()
       isTurn = false
-      topic = undefined
-      topicBlocked = false
+      captures = []
+      capturing = false
+      notBefore = 0
       $.ui.status(undefined)
       await scanResume($)
     }
@@ -380,8 +380,7 @@ export const register: Register = (on, options) => {
     const shown = await read($, band)
     const kinds = BAND_ORDER.filter(kind => isBandKind(kind) && shown[kind] !== undefined)
     if (kinds.length === 0) return { text: 'no alert row to hide.' }
-    if (kinds.includes('topic')) await closeTopic($, true)
-    await update($, dismissed, list => [...new Set([...list, ...kinds.filter(kind => kind !== 'topic')])])
+    await update($, dismissed, list => [...new Set([...list, ...kinds])])
     return { text: `hid ${kinds.join(', ')} until it clears.` }
   })
 
@@ -416,7 +415,7 @@ export const register: Register = (on, options) => {
               {`${ICON[kind]} pace ${s.text}${s.hint ? ` · ${s.hint}` : ''}`}
             </Text>
             <Button key="park" label="1 park" hotkey="1" onPress={() => void openPark($, kind)} />
-            <Button key="dismiss" label="2 dismiss" hotkey="2" onPress={() => void (kind === 'topic' ? closeTopic($, true) : update($, dismissed, l => [...l, kind]))} />
+            <Button key="dismiss" label="2 dismiss" hotkey="2" onPress={() => void update($, dismissed, l => [...l, kind])} />
           </Box>
         )}
         {fresh[0] && (
@@ -469,12 +468,16 @@ export const register: Register = (on, options) => {
       ),
       ['cost', n.costUsd !== undefined ? `$${n.costUsd.toFixed(2)}` : '—'],
       ['signals', n.active.length > 0 ? n.active.join(', ') : 'none'],
+      ...n.captures.map(
+        (c, i) =>
+          [i === 0 ? 'work' : '', `${i === 0 ? 'started' : i === n.captures.length - 1 ? 'now' : 'then'} at ${k(c.context)}: ${c.drifted ? '⇄ ' : ''}${c.text}${c.why ? ` (${c.why})` : ''}`] as [string, string],
+      ),
     ]
     return (
       <Box flexDirection="column">
         <Button key="close" label="close" role="dismiss" onPress={() => void $.ui.close({ id: NOW_PANE })} />
-        {rows.map(([label, value]) => (
-          <Box key={label} flexDirection="row">
+        {rows.map(([label, value], i) => (
+          <Box key={`${label}${i}`} flexDirection="row">
             <Text dimColor>{label.padEnd(14)}</Text>
             <Text>{value}</Text>
           </Box>

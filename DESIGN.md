@@ -67,20 +67,17 @@ priority `cold` > `expiring` > `heavy`, hidden while a turn runs, and always ren
 other mods' rows stack. The suggestion at the end of a message is `hint` from config (`fresh session` by
 default), so workflow wording ("save state, then /clear") lives in the user's config, not in pace.
 
-## Topic check
+## Work check
 
-The one signal that needs meaning, not counts, so the one model call pace makes; on by default (`topic_check`),
-off in `/plugin configure pace`.
-
-- Trigger, all must hold, on every prompt the person types (`origin.kind` `composer`): `topic_check` is `when heavy`;
-  context ≥ `warn`; the prompt is substantive (≥ 6 words, not a `/command`, not a resume note); at least 3 earlier
-  substantive prompts; no topic warning open and not dismissed.
-- Check: `$.model.complete` on Haiku with the last 5 prompts (300 chars each) and the new one (600), asking for
-  `{same_task, why}`; a few hundred tokens, nothing enters the session's context, the prompt is never held.
-- `same_task: false` → `topic` enter: a 10 s toast naming the change and `/pace-park`. Reminders as `topic` update
-  toasts at the end of the 1st and 3rd turn after; then only the band row (priority cold > expiring > topic > heavy).
-- Closes on park, `/clear`, or dismiss; dismiss also stops checks until the context drops below `warn` or `/clear`.
-- Not `$.agent.spawn` (an agent loop for a yes/no) and not `$.model.fork` (re-reads the whole context each check).
+The one model call, and a cycle rather than a per-prompt test. At `topic_at` (100K) Haiku reads the last 10
+prompts and writes one line: the baseline, shown after `on:` on the status line and toasted once. Every
+`topic_every` (100K of context growth) it reads the last 10 prompts again, with the baseline and the previous
+reading, and answers `{now, same_task, why}`. Every reading is kept for the session (`/pace-now` lists them:
+started, then, now). A reading that is not the same task toasts the history (started · N ago · now) and marks
+the status line with `⇄`; the next reading comes at the next interval, nothing is held or blocked. A failed or
+unparsable reply backs off 20K before the next try. `/clear` empties the readings. Interval, not per prompt:
+slow drift over several prompts is invisible to a sliding window and visible against a fixed baseline, and the
+cost is bounded by the context, not by how often you type.
 
 ## Park and resume
 
@@ -113,7 +110,9 @@ Park writes one small markdown file, a resume point, so a fresh session can pick
 | `expiring_minutes` | 5 | when the countdown starts |
 | `hint` | `suggestion: start a new session` | the suggestion after `heavy` and `cold` |
 | `status_line` | `colour` | `plain` drops the dot; `off` hides the line |
-| `topic_check` | `when heavy` | `off` stops the Haiku call |
+| `topic_check` | `on` | `off` stops the Haiku calls |
+| `topic_at` | 100 000 | context at which the baseline reading is taken |
+| `topic_every` | 100 000 | context growth between readings |
 
 Every setting has a default, so installing with Enter through the dialog works; `/plugin configure` and
 `/config` change them later.

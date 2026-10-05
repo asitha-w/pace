@@ -1,4 +1,4 @@
-import type { PaceBand, PaceKind, PaceMetrics, PacePhase, PaceResumePoint, PaceSignal, PaceTarget } from '../types'
+import type { PaceBand, PaceCapture, PaceKind, PaceMetrics, PacePhase, PaceResumePoint, PaceSignal, PaceTarget } from '../types'
 
 export type StatusStyle = 'colour' | 'plain' | 'off'
 
@@ -11,6 +11,9 @@ export type PaceConfig = {
   hint: string
   big_result: number
   status_line: StatusStyle
+  topic: boolean
+  topic_at: number
+  topic_every: number
 }
 
 export const DEFAULTS: PaceConfig = {
@@ -22,6 +25,9 @@ export const DEFAULTS: PaceConfig = {
   hint: 'suggestion: start a new session',
   big_result: 30_000,
   status_line: 'colour',
+  topic: true,
+  topic_at: 100_000,
+  topic_every: 100_000,
 }
 
 export function configFrom(options: Readonly<Record<string, unknown>>): PaceConfig {
@@ -39,6 +45,9 @@ export function configFrom(options: Readonly<Record<string, unknown>>): PaceConf
     hint: typeof hint === 'string' && hint !== '' ? hint : DEFAULTS.hint,
     big_result: num('big_result', DEFAULTS.big_result),
     status_line: options.status_line === 'off' || options.status_line === 'plain' ? options.status_line : 'colour',
+    topic: options.topic_check !== 'off',
+    topic_at: num('topic_at', DEFAULTS.topic_at),
+    topic_every: num('topic_every', DEFAULTS.topic_every),
   }
 }
 
@@ -165,17 +174,25 @@ export function textFor(kind: PaceKind, m: PaceMetrics): string {
       return `cache cold · next prompt re-writes ${k(m.recacheTokens ?? m.context)}`
     case 'rewrite':
       return `cache re-written mid-session (${m.cause ?? 'cause unknown'}) · ${k(m.recacheTokens ?? 0)} at write price`
-    case 'topic':
-      return m.reminder
-        ? `still carrying the old topic · ${k(m.context)} re-read each turn`
-        : `new topic at ${k(m.context)}${m.why ? ` (${m.why})` : ''}`
+    case 'topic': {
+      const c = m.captures ?? []
+      const last = c.at(-1)
+      if (!last) return `work at ${k(m.context)}`
+      if (c.length === 1) return `working on: ${last.text} (baseline at ${k(last.context)})`
+      const first = c[0]
+      const before = c.length > 2 ? c[c.length - 2] : undefined
+      const parts = [`started: ${first.text}`]
+      if (before) parts.push(`${k(last.context - before.context)} ago: ${before.text}`)
+      parts.push(`now: ${last.text}`)
+      return `work changed at ${k(m.context)} · ${parts.join(' · ')}`
+    }
   }
 }
 
 export function hintFor(kind: PaceKind, cfg: PaceConfig): string {
   if (kind === 'heavy' || kind === 'cold') return cfg.hint
   if (kind === 'expiring') return 'park before a break'
-  if (kind === 'topic') return 'park, then start a new session (/pace-park)'
+  if (kind === 'topic') return 'park to split the work (/pace-park)'
   return ''
 }
 
@@ -187,7 +204,14 @@ type Level = keyof typeof DOT
  * `colour` leads with a dot by cost: green under `warn`, yellow under `high`, red above, and red once the cache is cold and big.
  * The engine's status line draws no ANSI escapes (each byte shows as U+FFFD), so the dot is the colour.
  */
-export function statusText(track: Track, now: number, turns: number, cfg: PaceConfig, style: StatusStyle = 'plain'): string | undefined {
+export function statusText(
+  track: Track,
+  now: number,
+  turns: number,
+  cfg: PaceConfig,
+  style: StatusStyle = 'plain',
+  work?: PaceCapture,
+): string | undefined {
   if (style === 'off') return undefined
   const left = remainingMs(track, now, cfg)
   if (left === undefined) return undefined
@@ -211,6 +235,7 @@ export function statusText(track: Track, now: number, turns: number, cfg: PaceCo
     parts.push(`cache ${Math.floor(left / 60_000)}m`)
   }
   if (hint) parts.push(`↻ ${hint}`)
+  if (work) parts.push(`${work.drifted ? '⇄ ' : ''}on: ${clip(work.text, 40)}`)
   const line = parts.join(' · ')
   return style === 'colour' ? `${DOT[level]} ${line}` : line
 }
@@ -393,39 +418,47 @@ export function appendNote(existing: string, facts: NoteFacts, summary?: string)
 }
 
 export const TOPIC_MODEL = 'claude-haiku-4-5-20251001'
-export const TOPIC_REMIND_AT = [1, 3]
+const RETRY_GAP = 20_000
 
-export function isSubstantive(text: string): boolean {
-  const t = text.trim()
-  if (t.startsWith('/') || t.startsWith('Resuming from pace resume point')) return false
-  return t.split(/\s+/).filter(Boolean).length >= 6
+/** Whether a capture is due at this context size: the baseline at `topic_at`, then one every `topic_every`; `notBefore` holds a retry off. */
+export function captureDue(captures: readonly PaceCapture[], context: number, cfg: PaceConfig, notBefore = 0): 'baseline' | 'check' | undefined {
+  if (!cfg.topic || context < notBefore) return undefined
+  const last = captures.at(-1)
+  if (!last) return context >= cfg.topic_at ? 'baseline' : undefined
+  return context >= last.context + cfg.topic_every ? 'check' : undefined
 }
 
-export function shouldCheckTopic(text: string, prior: string[], context: number, cfg: PaceConfig, mode: unknown, blocked: boolean): boolean {
-  return mode !== 'off' && !blocked && context >= cfg.warn && isSubstantive(text) && prior.length >= 3
+export function retryAt(context: number): number {
+  return context + RETRY_GAP
 }
 
-export function topicPrompt(prior: string[], next: string): string {
-  const earlier = prior.map((p, i) => `${i + 1}. ${p}`).join('\n')
-  return [
-    'Earlier requests in a coding session:',
-    earlier,
-    '',
-    `New request: ${clip(next.trim().replace(/\s+/g, ' '), 600)}`,
-    '',
-    'Is the new request part of the same task as the earlier ones, or a different task?',
-    'A follow-up, a fix, a test or a next step of the same work is the same task.',
-    'Reply with JSON only: {"same_task": true|false, "why": "<at most 8 words naming old → new topic>"}',
-  ].join('\n')
+/** One Haiku question: what the work is now in a line, and whether it is still the baseline's task. */
+export function capturePrompt(prompts: readonly string[], baseline?: string, previous?: string): string {
+  const list = prompts.map((p, i) => `${i + 1}. ${p}`).join('\n')
+  const lines = ['The last requests in a coding session:', list, '']
+  if (baseline) {
+    lines.push(`When the session was first measured the work was: "${baseline}"`)
+    if (previous && previous !== baseline) lines.push(`At the last check it was: "${previous}"`)
+    lines.push(
+      '',
+      'Say in one line what the work is now, and whether it is still the same task as when first measured.',
+      'A follow-up, a fix, a test or a next step of the same work is the same task; a different system, product or goal is not.',
+      'Reply with JSON only: {"now": "<at most 12 words>", "same_task": true|false, "why": "<at most 8 words: old → new>"}',
+    )
+  } else {
+    lines.push('Say in one line what the work is.', 'Reply with JSON only: {"now": "<at most 12 words>"}')
+  }
+  return lines.join('\n')
 }
 
-export function parseTopic(text: string): { sameTask: boolean; why: string } | undefined {
+export function parseCapture(text: string, hasBaseline: boolean): { now: string; sameTask: boolean; why: string } | undefined {
   const match = /\{[\s\S]*\}/.exec(text)
   if (!match) return undefined
   try {
-    const raw = JSON.parse(match[0]) as { same_task?: unknown; why?: unknown }
-    if (typeof raw.same_task !== 'boolean') return undefined
-    return { sameTask: raw.same_task, why: typeof raw.why === 'string' ? clip(raw.why, 60) : '' }
+    const raw = JSON.parse(match[0]) as { now?: unknown; same_task?: unknown; why?: unknown }
+    if (typeof raw.now !== 'string' || raw.now.trim() === '') return undefined
+    const sameTask = hasBaseline ? raw.same_task === true : true
+    return { now: clip(raw.now.trim().replace(/\s+/g, ' '), 80), sameTask, why: typeof raw.why === 'string' ? clip(raw.why, 60) : '' }
   } catch {
     return undefined
   }

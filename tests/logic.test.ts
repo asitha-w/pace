@@ -2,17 +2,17 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import {
   configFrom,
-  isSubstantive,
+  captureDue,
+  capturePrompt,
   newTrack,
   noteFile,
   onStep,
   onTick,
   parsePoint,
-  parseTopic,
+  parseCapture,
   resumeMarker,
   statusText,
   resumeText,
-  shouldCheckTopic,
   textFor,
   withSignal,
 } from '../hooks/logic'
@@ -125,29 +125,53 @@ describe('notes', () => {
   })
 })
 
-describe('topic', () => {
-  test('only substantive prompts in a heavy session are checked', () => {
-    const prior = ['a', 'b', 'c']
-    expect(isSubstantive('yes')).toBe(false)
-    expect(isSubstantive('/pace-park')).toBe(false)
-    expect(isSubstantive('now lets look at the k8s alerts for prod')).toBe(true)
-    const text = 'now lets look at the k8s alerts for prod'
-    expect(shouldCheckTopic(text, prior, 200_000, cfg, 'when heavy', false)).toBe(true)
-    expect(shouldCheckTopic(text, prior, 100_000, cfg, 'when heavy', false)).toBe(false)
-    expect(shouldCheckTopic(text, prior, 200_000, cfg, 'off', false)).toBe(false)
-    expect(shouldCheckTopic(text, prior, 200_000, cfg, 'when heavy', true)).toBe(false)
-    expect(shouldCheckTopic(text, ['a', 'b'], 200_000, cfg, 'when heavy', false)).toBe(false)
+describe('work captures', () => {
+  const cap = (context: number, text: string, drifted = false) => ({ context, turns: 1, text, drifted, why: '' })
+
+  test('the baseline is due at topic_at, then a check every topic_every', () => {
+    expect(captureDue([], 90_000, cfg)).toBeUndefined()
+    expect(captureDue([], 102_000, cfg)).toBe('baseline')
+    expect(captureDue([cap(102_000, 'a')], 190_000, cfg)).toBeUndefined()
+    expect(captureDue([cap(102_000, 'a')], 203_000, cfg)).toBe('check')
+    expect(captureDue([cap(102_000, 'a'), cap(203_000, 'b')], 290_000, cfg)).toBeUndefined()
+    expect(captureDue([cap(102_000, 'a'), cap(203_000, 'b')], 310_000, cfg)).toBe('check')
+    expect(captureDue([], 102_000, cfg, 120_000)).toBeUndefined()
+    expect(captureDue([], 102_000, configFrom({ topic_check: 'off' }))).toBeUndefined()
+    expect(captureDue([], 60_000, configFrom({ topic_at: 50_000 }))).toBe('baseline')
   })
 
-  test('the verdict parses from a reply with or without fences', () => {
-    expect(parseTopic('{"same_task": false, "why": "pace mod → k8s alerts"}')).toEqual({ sameTask: false, why: 'pace mod → k8s alerts' })
-    expect(parseTopic('```json\n{"same_task": true}\n```')).toEqual({ sameTask: true, why: '' })
-    expect(parseTopic('not json')).toBeUndefined()
+  test('the prompt asks only for a line without a baseline, and for a verdict with one', () => {
+    const plain = capturePrompt(['one', 'two', 'three'])
+    expect(plain).toContain('1. one')
+    expect(plain).not.toContain('same_task')
+    const checked = capturePrompt(['one', 'two', 'three'], 'pace mod status line', 'pace README')
+    expect(checked).toContain('first measured the work was: "pace mod status line"')
+    expect(checked).toContain('At the last check it was: "pace README"')
+    expect(checked).toContain('same_task')
   })
 
-  test('topic text for detection and reminders', () => {
-    expect(textFor('topic', { context: 322_000, turns: 1, why: 'pace mod → k8s alerts' })).toBe('new topic at 322K (pace mod → k8s alerts)')
-    expect(textFor('topic', { context: 335_000, turns: 2, reminder: 1 })).toBe('still carrying the old topic · 335K re-read each turn')
+  test('the reply parses with or without fences', () => {
+    expect(parseCapture('{"now": "pace mod status line"}', false)).toEqual({ now: 'pace mod status line', sameTask: true, why: '' })
+    expect(parseCapture('```json\n{"now": "k8s alerts on prod", "same_task": false, "why": "pace mod → k8s alerts"}\n```', true)).toEqual({
+      now: 'k8s alerts on prod',
+      sameTask: false,
+      why: 'pace mod → k8s alerts',
+    })
+    expect(parseCapture('{"now": "k8s alerts on prod"}', true)).toEqual({ now: 'k8s alerts on prod', sameTask: false, why: '' })
+    expect(parseCapture('not json', true)).toBeUndefined()
+  })
+
+  test('topic text: the baseline, then started / before / now', () => {
+    const a = cap(102_000, 'pace mod status line')
+    const b = cap(203_000, 'pace README', false)
+    const c = cap(310_000, 'k8s alerts on prod', true)
+    expect(textFor('topic', { context: 102_000, turns: 1, captures: [a] })).toBe('working on: pace mod status line (baseline at 102K)')
+    expect(textFor('topic', { context: 203_000, turns: 1, captures: [a, { ...b, drifted: true }] })).toBe(
+      'work changed at 203K · started: pace mod status line · now: pace README',
+    )
+    expect(textFor('topic', { context: 310_000, turns: 1, captures: [a, b, c] })).toBe(
+      'work changed at 310K · started: pace mod status line · 107K ago: pace README · now: k8s alerts on prod',
+    )
   })
 })
 
@@ -185,6 +209,14 @@ describe('statusText', () => {
       '🔴 ⚠ ctx 182K · 45 turns · ❄ cache cold · 182K re-write · ↻ suggestion: start a new session',
     )
     expect(statusText(at(40_000, 0), 0, 1, cfg, 'off')).toBeUndefined()
+  })
+
+  test('the latest work reading rides at the end', () => {
+    const work = { context: 102_000, turns: 9, text: 'pace mod status line', drifted: false, why: '' }
+    expect(statusText(at(120_000, 0), 60_000, 12, cfg, 'colour', work)).toBe('🟢 ctx 120K · 12 turns · cache 59m · on: pace mod status line')
+    expect(statusText(at(220_000, 0), 60_000, 30, cfg, 'plain', { ...work, text: 'k8s alerts on prod', drifted: true })).toBe(
+      '⚠ ctx 220K · 30 turns · cache 59m · ⇄ on: k8s alerts on prod',
+    )
   })
 
   test('cold and big names the re-write; cold and small stays quiet', () => {

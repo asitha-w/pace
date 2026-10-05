@@ -11,7 +11,16 @@ export type PaceMetrics = {
   tools?: string[]
   cause?: string
   why?: string
-  reminder?: number
+  captures?: PaceCapture[]
+}
+
+/** One reading of what the work is: taken at `context`, as a short line; `drifted` when it is not the baseline's task. */
+export type PaceCapture = {
+  context: number
+  turns: number
+  text: string
+  drifted: boolean
+  why: string
 }
 
 export type PaceSignal = {
@@ -44,6 +53,7 @@ export type PaceNow = {
   rateLimits: PaceRateLimit[]
   costUsd?: number
   active: PaceKind[]
+  captures: PaceCapture[]
 }
 
 export type PaceResumePoint = {
@@ -62,7 +72,7 @@ export type PaceParkDraft = {
   isWarm: boolean
 }
 
-export type PaceBand = { heavy?: PaceSignal; expiring?: PaceSignal; cold?: PaceSignal; topic?: PaceSignal }
+export type PaceBand = { heavy?: PaceSignal; expiring?: PaceSignal; cold?: PaceSignal }
 
 export type Pace = {
   signal: (signal: PaceSignal) => Promise<boolean>

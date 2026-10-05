@@ -175,53 +175,69 @@ test('a big tool result between two requests is a jump toast', async ($, on) => 
   expect(toasts).toContain('pace: Read added 45K')
 })
 
-test('a new topic in a heavy session toasts, then reminds twice', async ($, on) => {
+const SAID = (text: string) => ({ role: 'user', text, toolUses: [] })
+const PROMPTS = [SAID('build the pace mod signals and band'), SAID('add park and resume to the pace mod'), SAID('write tests for the pace mod topic check')]
+
+test('the work is read at the baseline, then checked every interval, with the history in the toast', async ($, on) => {
   const toasts: string[] = []
+  const lines: (string | undefined)[] = []
   quiet(on, toasts)
+  watchStatus(on, lines)
   const clock = mock.clock(on, { now: 1_000_000 })
-  answerStep(on, [{ read: 200_000, write: 1_000, tools: [] }])
-  const said = (text: string) => ({ role: 'user', text, toolUses: [] })
-  on('session.messages', () => ({
-    value: [
-      said('build the pace mod signals and band'),
-      said('add park and resume to the pace mod'),
-      said('write tests for the pace mod topic check'),
-    ],
-  }))
-  let asked = ''
+  answerStep(on, [
+    { read: 50_000, write: 1_000, tools: [] },
+    { read: 110_000, write: 1_000, tools: [] },
+    { read: 150_000, write: 1_000, tools: [] },
+    { read: 215_000, write: 1_000, tools: [] },
+    { read: 320_000, write: 1_000, tools: [] },
+  ])
+  on('session.messages', () => ({ value: PROMPTS }))
+  const replies = [
+    '{"now": "pace mod status line"}',
+    '{"now": "pace README and diagram", "same_task": true}',
+    '{"now": "k8s alerts on prod", "same_task": false, "why": "pace mod → k8s alerts"}',
+  ]
+  const asked: string[] = []
   on('model.complete', ($, e) => {
-    asked = e.model
-    return { value: { isAnswered: true, text: '{"same_task": false, "why": "pace mod → k8s alerts"}', usage: {} } }
+    asked.push(e.model)
+    return { value: { isAnswered: true, text: replies[asked.length - 1] ?? '{}', usage: {} } }
   })
-  on('prompt.submit', ($, e) => ({ text: e.text }) as never)
-  on('turn.complete', ($, e) => ({ text: e.answer }) as never)
   await step($, 0)
-  await $.prompt.submit({ text: 'now lets look at why the k8s alerts fire on prod', wait: false, origin: { kind: 'composer' } } as never)
   await clock.advance(0)
-  expect(asked).toBe('claude-haiku-4-5-20251001')
-  expect(toasts).toContain('pace: new topic at 202K (pace mod → k8s alerts) · park, then start a new session (/pace-park)')
-  for (let i = 0; i < 4; i++) {
-    await $.turn.complete({ answer: '', durationMs: 1, isAborted: false, turnId: `t${i}`, reason: 'answer' } as never)
-    await clock.advance(0)
-  }
-  const reminders = toasts.filter(t => t.startsWith('pace: still carrying the old topic'))
-  expect(reminders.length).toBe(2)
+  expect(asked.length).toBe(0)
+  await step($, 1)
+  await clock.advance(0)
+  expect(asked).toEqual(['claude-haiku-4-5-20251001'])
+  expect(toasts).toContain('pace: working on: pace mod status line (baseline at 112K)')
+  expect(lines.at(-1)).toBe('🟢 ctx 112K · 3 turns · cache 60m · on: pace mod status line')
+  await step($, 2)
+  await clock.advance(0)
+  expect(asked.length).toBe(1)
+  await step($, 3)
+  await clock.advance(0)
+  expect(asked.length).toBe(2)
+  expect(toasts.filter(t => t.startsWith('pace: work changed')).length).toBe(0)
+  await step($, 4)
+  await clock.advance(0)
+  expect(asked.length).toBe(3)
+  expect(toasts).toContain(
+    'pace: work changed at 322K · started: pace mod status line · 105K ago: pace README and diagram · now: k8s alerts on prod · park to split the work (/pace-park)',
+  )
+  expect(lines.at(-1)).toBe('🔴 ⚠ ctx 322K · 3 turns · cache 60m · ↻ suggestion: start a new session · ⇄ on: k8s alerts on prod')
 })
 
 test('topic_check off never calls the model', { options: { topic_check: 'off' } }, async ($, on) => {
   quiet(on, [])
-  mock.clock(on, { now: 1_000_000 })
+  const clock = mock.clock(on, { now: 1_000_000 })
   answerStep(on, [{ read: 200_000, write: 1_000, tools: [] }])
-  const said = (text: string) => ({ role: 'user', text, toolUses: [] })
-  on('session.messages', () => ({ value: [said('one two three four five six'), said('one two three four five six'), said('one two three four five six')] }))
+  on('session.messages', () => ({ value: PROMPTS }))
   let calls = 0
   on('model.complete', () => {
     calls += 1
-    return { value: { isAnswered: true, text: '{"same_task": false}', usage: {} } }
+    return { value: { isAnswered: true, text: '{"now": "x"}', usage: {} } }
   })
-  on('prompt.submit', ($, e) => ({ text: e.text }) as never)
   await step($, 0)
-  await $.prompt.submit({ text: 'now lets look at why the k8s alerts fire on prod', wait: false, origin: { kind: 'composer' } } as never)
+  await clock.advance(0)
   expect(calls).toBe(0)
 })
 
