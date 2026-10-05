@@ -24,7 +24,8 @@ The rules behind the split:
   held.
 - **Nothing standing is model-facing.** Every surface above is drawn for you. The work check is
   the only model call, it goes to Haiku, and its answer comes back as a toast and a few words on
-  the status line, not as context.
+  the status line, not as context. The one thing the model does see is the help skill's
+  description, about 120 tokens, which is how it knows to answer questions about pace.
 - **Every button has a command.** The band and the panes can be hidden by a narrow terminal;
   `/pace-park`, `/pace-resume`, `/pace-dismiss` and `/pace-close` do the same from the prompt.
 

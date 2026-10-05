@@ -5,7 +5,8 @@
 A Claude Code mod. Every turn re-reads the whole context, so a session costs context × turns, and a
 cold prompt cache re-writes it all. pace shows you the cost while you work, tells you when the work
 has drifted, and saves your place so the next session starts small. It nudges, never acts, and
-nothing it shows enters the model's context.
+nothing it shows enters the model's context. Its only standing cost is the description of its help
+skill, about 120 tokens a session.
 
 ![pace: session → measure → status line and signals → the Haiku loop → park → next session](docs/overview.svg)
 

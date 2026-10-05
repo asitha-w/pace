@@ -1,0 +1,15 @@
+{
+  "name": "asitha-w",
+  "owner": {
+    "name": "Asitha Weerasinghe",
+    "url": "https://github.com/asitha-w"
+  },
+  "plugins": [
+    {
+      "name": "pace",
+      "source": ".",
+      "description": "Shows when a session gets heavy or its prompt cache is about to go cold, and parks a session so the next one can resume it",
+      "version": "0.1.0"
+    }
+  ]
+}
