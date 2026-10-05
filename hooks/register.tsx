@@ -51,7 +51,7 @@ const draft = atom(DRAFT, null)
 const nowState = atom(NOW, null)
 
 const HELP = [
-  'status line: ctx (context size) · turns · cache (minutes left, or cold); green under warn, yellow under high, red above;',
+  'status line: a dot by cost (🟢 under warn, 🟡 under high, 🔴 above or cold and big) · ctx (context size) · turns · cache (minutes left, or cold);',
   '  ⚠ past the heavy level, ❄ cold and big, ⏳ about to expire',
   'commands: /pace-now figures · /pace-park write a resume point · /pace-resume list resume points ·',
   '  /pace-dismiss hide the alert row · /pace-close close the panes · /pace-help this',

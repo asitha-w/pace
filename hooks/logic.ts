@@ -179,37 +179,40 @@ export function hintFor(kind: PaceKind, cfg: PaceConfig): string {
   return ''
 }
 
-const ANSI = { green: '\x1b[32m', yellow: '\x1b[33m', red: '\x1b[31m', dim: '\x1b[2m', reset: '\x1b[0m' }
-type Tone = keyof typeof ANSI
+const DOT = { green: '🟢', yellow: '🟡', red: '🔴' } as const
+type Level = keyof typeof DOT
 
 /**
  * The standing status line: context, turns, cache; the hint only once the session is heavy or a cold cache is big.
- * Coloured by cost: green under `warn`, yellow under `high`, red above; the cache part yellow while expiring, red once cold and big.
+ * `colour` leads with a dot by cost: green under `warn`, yellow under `high`, red above, and red once the cache is cold and big.
+ * The engine's status line draws no ANSI escapes (each byte shows as U+FFFD), so the dot is the colour.
  */
 export function statusText(track: Track, now: number, turns: number, cfg: PaceConfig, style: StatusStyle = 'plain'): string | undefined {
   if (style === 'off') return undefined
   const left = remainingMs(track, now, cfg)
   if (left === undefined) return undefined
   const context = contextOf(track.last)
-  const level: Tone = context >= cfg.high ? 'red' : context >= cfg.warn ? 'yellow' : 'green'
-  const paint = (tone: Tone, text: string) => (style === 'colour' ? `${ANSI[tone]}${text}${ANSI.reset}` : text)
-  const parts = [paint(level, `${level === 'green' ? '' : '⚠ '}ctx ${k(context)}`), `${turns} turn${turns === 1 ? '' : 's'}`]
+  let level: Level = context >= cfg.high ? 'red' : context >= cfg.warn ? 'yellow' : 'green'
+  const parts = [`${level === 'green' ? '' : '⚠ '}ctx ${k(context)}`, `${turns} turn${turns === 1 ? '' : 's'}`]
   let hint = context >= cfg.high ? cfg.hint : ''
   if (left <= 0) {
     if (context >= cfg.cold_warn) {
-      parts.push(paint('red', `❄ cache cold · ${k(context)} re-write`))
+      parts.push(`❄ cache cold · ${k(context)} re-write`)
       hint = cfg.hint
+      level = 'red'
     } else {
-      parts.push(paint('dim', 'cache cold'))
+      parts.push('cache cold')
     }
   } else if (left <= cfg.expiring * 1000) {
-    parts.push(paint('yellow', `⏳ cache ${Math.max(1, Math.ceil(left / 60_000))}m`))
+    parts.push(`⏳ cache ${Math.max(1, Math.ceil(left / 60_000))}m`)
     if (!hint) hint = 'park before a break'
+    if (level === 'green') level = 'yellow'
   } else {
-    parts.push(paint('dim', `cache ${Math.floor(left / 60_000)}m`))
+    parts.push(`cache ${Math.floor(left / 60_000)}m`)
   }
-  if (hint) parts.push(paint(level === 'green' ? 'yellow' : level, `↻ ${hint}`))
-  return parts.join(' · ')
+  if (hint) parts.push(`↻ ${hint}`)
+  const line = parts.join(' · ')
+  return style === 'colour' ? `${DOT[level]} ${line}` : line
 }
 
 export type Message = {

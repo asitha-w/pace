@@ -39,13 +39,13 @@
   <text x="1050" y="124" fill="#374151">status line under the prompt, always:</text>
   <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="18">
     <rect x="1050" y="138" width="574" height="92" rx="8" fill="#111827"/>
-    <text x="1064" y="164"><tspan fill="#4ade80">ctx 62K</tspan><tspan fill="#d1d5db"> · 12 turns · </tspan><tspan fill="#9ca3af">cache 52m</tspan></text>
-    <text x="1064" y="190"><tspan fill="#facc15">⚠ ctx 182K</tspan><tspan fill="#d1d5db"> · 45 turns · </tspan><tspan fill="#facc15">⏳ cache 3m · ↻ park before a break</tspan></text>
-    <text x="1064" y="216"><tspan fill="#f87171">⚠ ctx 310K</tspan><tspan fill="#d1d5db"> · 120 turns · </tspan><tspan fill="#f87171">❄ cache cold · 310K re-write · ↻ start a new session</tspan></text>
+    <text x="1064" y="164"><tspan fill="#4ade80">●</tspan><tspan fill="#d1d5db"> ctx 62K</tspan><tspan fill="#d1d5db"> · 12 turns · </tspan><tspan fill="#9ca3af">cache 52m</tspan></text>
+    <text x="1064" y="190"><tspan fill="#facc15">●</tspan><tspan fill="#d1d5db"> ⚠ ctx 182K</tspan><tspan fill="#d1d5db"> · 45 turns · </tspan><tspan fill="#d1d5db">⏳ cache 3m · ↻ park before a break</tspan></text>
+    <text x="1064" y="216"><tspan fill="#f87171">●</tspan><tspan fill="#d1d5db"> ⚠ ctx 310K</tspan><tspan fill="#d1d5db"> · 120 turns · </tspan><tspan fill="#d1d5db">❄ cache cold · 310K re-write · ↻ start a new session</tspan></text>
   </g>
   <text x="1050" y="262" fill="#374151">• toast when a signal fires  • band row with [park] [dismiss] while it stands</text>
   <text x="1050" y="292" fill="#374151">• /pace-now pane with every figure  • /pace-help</text>
-  <text x="1050" y="320" fill="#6b7280" font-size="18">green: cheap · yellow: heavy · red: expensive</text>
+  <text x="1050" y="320" fill="#6b7280" font-size="18">dot: green cheap · yellow heavy · red expensive or cold and big</text>
 
   <!-- 4 park -->
   <line x1="1337" y1="330" x2="1337" y2="398" stroke="#6b7280" stroke-width="3" marker-end="url(#a)"/>

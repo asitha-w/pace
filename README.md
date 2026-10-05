@@ -2,8 +2,8 @@
 
 **Know when a Claude Code session is getting expensive, and leave it cleanly.**
 
-pace is a Claude Code mod. It keeps one coloured line under the prompt with the size of the session
-and the life left in its prompt cache, speaks up when the session gets heavy or the cache is about
+pace is a Claude Code mod. It keeps one line under the prompt with the size of the session, the life
+left in its prompt cache and a coloured dot for the cost, speaks up when the session gets heavy or the cache is about
 to go cold, and saves where you are so a fresh session picks up from there. It only nudges: it never
 clears, compacts or blocks anything, and nothing it shows enters the model's context.
 
@@ -22,8 +22,8 @@ no live nudge. pace adds one.
 1. **It measures.** After every request to the model it reads the usage block the engine hands
    back and keeps the context size, the time of the request and what the cache did. Subagent
    requests are ignored. A 15-second clock watches the cache lifetime between requests.
-2. **It shows a standing line** under the prompt: context size, turn count, minutes of cache
-   left, coloured by cost. Green under `warn`, yellow under `high`, red above. A countdown in
+2. **It shows a standing line** under the prompt: a dot for the cost, context size, turn count,
+   minutes of cache left. Green dot under `warn`, yellow under `high`, red above. A countdown in
    the last `expiring_minutes` of cache life, a cold mark with the re-write size once the cache
    has died. The `hint` text appears past `high`, or when the cache is cold and the context big.
 3. **It raises six signals**, each once per crossing:
@@ -56,18 +56,19 @@ no live nudge. pace adds one.
 ## The status line
 
 ```
-ctx 62K · 12 turns · cache 52m                                               green
-⚠ ctx 182K · 45 turns · cache 41m                                            yellow
-⚠ ctx 182K · 45 turns · ⏳ cache 3m · ↻ park before a break                  countdown
-⚠ ctx 312K · 120 turns · cache 52m · ↻ suggestion: start a new session       red
-⚠ ctx 310K · 120 turns · ❄ cache cold · 310K re-write · ↻ suggestion: …      cold and big
-ctx 40K · 12 turns · cache cold                                              cold and small: cheap, carry on
+🟢 ctx 62K · 12 turns · cache 52m                                            cheap
+🟡 ⚠ ctx 182K · 45 turns · cache 41m                                         heavy
+🟡 ⚠ ctx 182K · 45 turns · ⏳ cache 3m · ↻ park before a break               countdown
+🔴 ⚠ ctx 312K · 120 turns · cache 52m · ↻ suggestion: start a new session    expensive
+🔴 ⚠ ctx 310K · 120 turns · ❄ cache cold · 310K re-write · ↻ suggestion: …   cold and big
+🟢 ctx 40K · 12 turns · cache cold                                           cold and small: cheap, carry on
 ```
 
-The context part is coloured by cost, the cache part by state. It is the only standing surface
-pace has, and it is quiet by design: the same three fields every time, so you can read it without
-reading it. `status_line` = `plain` drops the colour, `off` hides the line. The line disappears on
-`/clear`.
+The dot is the colour: green under `warn`, yellow under `high` or while the cache is about to
+expire, red above `high` or once the cache is cold and big. Claude Code's status line draws text
+only, no ANSI colour, which is why a glyph carries it. It is the only standing surface pace has,
+and it is quiet by design: the same three fields every time, so you can read it without reading
+it. `status_line` = `plain` drops the dot, `off` hides the line. The line disappears on `/clear`.
 
 ## How pace talks to you
 
@@ -76,7 +77,7 @@ Claude Code gives a mod, each for one job, and nothing it draws enters the model
 
 | Surface | Where | pace uses it for | Lives |
 |---|---|---|---|
-| **Status line** | one line under the prompt | the standing figures, coloured by cost | always; refreshed after each request and every 15 s; `/clear` drops it |
+| **Status line** | one line under the prompt | the standing figures, with a dot coloured by cost | always; refreshed after each request and every 15 s; `/clear` drops it |
 | **Toast** | a short notice that fades | each crossing, once: `heavy`, `jump`, `rewrite`, `expiring`, `topic`; park and resume confirmations | a few seconds |
 | **Band row** | a row above the prompt with buttons | the one signal that needs an action, with `park` and `dismiss`; the resume points for this folder with `resume`, `discard`, `all` | until it clears, or you dismiss it |
 | **Pane** | a framed region beside the transcript | `/pace-now` figures; the park dialog (target, summary on/off); the resume list | until you close it (`Esc`, `Ctrl+X X`, or `/pace-close`) |

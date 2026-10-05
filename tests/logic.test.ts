@@ -176,14 +176,13 @@ describe('statusText', () => {
     expect(statusText(at(182_000, 0), 57 * 60_000 + 1, 45, cfg)).toBe('⚠ ctx 182K · 45 turns · ⏳ cache 3m · ↻ park before a break')
   })
 
-  test('colour paints the context by cost and the cache by state', () => {
-    const G = '\x1b[32m', Y = '\x1b[33m', R = '\x1b[31m', D = '\x1b[2m', X = '\x1b[0m'
-    expect(statusText(at(40_000, 0), 19 * 60_000, 1, cfg, 'colour')).toBe(`${G}ctx 40K${X} · 1 turn · ${D}cache 41m${X}`)
-    expect(statusText(at(182_000, 0), 57 * 60_000 + 1, 45, cfg, 'colour')).toBe(
-      `${Y}⚠ ctx 182K${X} · 45 turns · ${Y}⏳ cache 3m${X} · ${Y}↻ park before a break${X}`,
-    )
-    expect(statusText(at(310_000, 0), 61 * 60_000, 120, cfg, 'colour')).toBe(
-      `${R}⚠ ctx 310K${X} · 120 turns · ${R}❄ cache cold · 310K re-write${X} · ${R}↻ suggestion: start a new session${X}`,
+  test('colour leads with a dot by cost and state', () => {
+    expect(statusText(at(40_000, 0), 19 * 60_000, 1, cfg, 'colour')).toBe('🟢 ctx 40K · 1 turn · cache 41m')
+    expect(statusText(at(182_000, 0), 19 * 60_000, 45, cfg, 'colour')).toBe('🟡 ⚠ ctx 182K · 45 turns · cache 41m')
+    expect(statusText(at(40_000, 0), 57 * 60_000 + 1, 1, cfg, 'colour')).toBe('🟡 ctx 40K · 1 turn · ⏳ cache 3m · ↻ park before a break')
+    expect(statusText(at(312_000, 0), 8 * 60_000, 120, cfg, 'colour')).toBe('🔴 ⚠ ctx 312K · 120 turns · cache 52m · ↻ suggestion: start a new session')
+    expect(statusText(at(182_000, 0), 61 * 60_000, 45, cfg, 'colour')).toBe(
+      '🔴 ⚠ ctx 182K · 45 turns · ❄ cache cold · 182K re-write · ↻ suggestion: start a new session',
     )
     expect(statusText(at(40_000, 0), 0, 1, cfg, 'off')).toBeUndefined()
   })

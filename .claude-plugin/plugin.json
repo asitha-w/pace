@@ -88,7 +88,7 @@
     "status_line": {
       "type": "string",
       "title": "Status line",
-      "description": "One line under the prompt with the context size, turn count and cache countdown: coloured by cost (green, yellow, red), plain, or off",
+      "description": "One line under the prompt with the context size, turn count and cache countdown: with a coloured dot by cost (green, yellow, red), plain, or off",
       "options": [
         "colour",
         "plain",

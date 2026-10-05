@@ -37,7 +37,7 @@ a break longer than the TTL.
 
 ## Surfaces
 
-One standing surface and four on demand. Status line (`$.ui.status`, ANSI colour: green under `warn`, yellow under `high`, red above): `ctx 182K · 45 turns · cache 41m`, refreshed
+One standing surface and four on demand. Status line (`$.ui.status`, text only: the engine draws ANSI escapes as U+FFFD, so a dot carries the colour, 🟢 under `warn`, 🟡 under `high`, 🔴 above): `ctx 182K · 45 turns · cache 41m`, refreshed
 after each request and on the 15 s tick; `⚠` from `warn`, `⏳ cache 3m` under `expiring_minutes`, `❄ cache cold · 310K
 re-write` once cold and past `cold_warn`; the hint after `↻` from `high` or when cold and big; cleared on `/clear`.
 Toast: one per crossing. Band row (`AbovePrompt`): the one state that needs an action, with its buttons. Pane:
@@ -112,7 +112,7 @@ Park writes one small markdown file, a resume point, so a fresh session can pick
 | `cache_ttl_minutes` | 60 | the prompt-cache lifetime (5 or 60) |
 | `expiring_minutes` | 5 | when the countdown starts |
 | `hint` | `suggestion: start a new session` | the suggestion after `heavy` and `cold` |
-| `status_line` | `colour` | `plain` drops the colour; `off` hides the line |
+| `status_line` | `colour` | `plain` drops the dot; `off` hides the line |
 | `topic_check` | `when heavy` | `off` stops the Haiku call |
 
 Every setting has a default, so installing with Enter through the dialog works; `/plugin configure` and

@@ -285,5 +285,5 @@ test('the status line is coloured by default', async ($, on) => {
   answerStep(on, [{ read: 50_000, write: 1_000, tools: [] }])
   await step($, 0)
   await clock.advance(0)
-  expect(lines.at(-1)).toBe('\x1b[32mctx 52K\x1b[0m · 3 turns · \x1b[2mcache 60m\x1b[0m')
+  expect(lines.at(-1)).toBe('🟢 ctx 52K · 3 turns · cache 60m')
 })
